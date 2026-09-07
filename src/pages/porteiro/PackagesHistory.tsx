@@ -1117,6 +1117,74 @@ const PorteiroPackagesHistory = () => {
                   <SelectItem value="retirada">Retiradas</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Filtro por período: cadastro ou retirada */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
+                <Select
+                  value={dateField}
+                  onValueChange={(v) => {
+                    setDateField(v as "received_at" | "picked_up_at");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-[190px]">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Tipo de data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received_at">Data do cadastro</SelectItem>
+                    <SelectItem value="picked_up_at">Data da retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] text-muted-foreground" htmlFor="date-from">
+                      De
+                    </label>
+                    <input
+                      id="date-from"
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] text-muted-foreground" htmlFor="date-to">
+                      Até
+                    </label>
+                    <input
+                      id="date-to"
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-5"
+                      onClick={() => {
+                        setDateFrom("");
+                        setDateTo("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
