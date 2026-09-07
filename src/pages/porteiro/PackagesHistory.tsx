@@ -233,7 +233,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
@@ -322,7 +322,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch total count for pagination
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField],
+    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -496,7 +496,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
