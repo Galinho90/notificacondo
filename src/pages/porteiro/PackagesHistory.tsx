@@ -143,6 +143,8 @@ const PorteiroPackagesHistory = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
+  const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
@@ -231,7 +233,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
@@ -320,7 +322,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch total count for pagination
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -340,11 +342,11 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { count, error } = await query;
@@ -358,7 +360,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch packages for selected condominium with pagination
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, currentPage],
+    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -404,11 +406,11 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
@@ -494,7 +496,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
@@ -505,8 +507,8 @@ const PorteiroPackagesHistory = () => {
         if (selectedBlock !== "all") query = query.eq("block_id", selectedBlock);
         if (selectedApartment !== "all") query = query.eq("apartment_id", selectedApartment);
         if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
-        if (dateFrom) query = query.gte("received_at", dateFrom);
-        if (dateTo) query = query.lte("received_at", `${dateTo}T23:59:59`);
+        if (dateFrom) query = query.gte(dateField, dateFrom);
+        if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
@@ -529,8 +531,8 @@ const PorteiroPackagesHistory = () => {
 
       if (selectedBlock !== "all") avgQuery = avgQuery.eq("block_id", selectedBlock);
       if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
-      if (dateFrom) avgQuery = avgQuery.gte("received_at", dateFrom);
-      if (dateTo) avgQuery = avgQuery.lte("received_at", `${dateTo}T23:59:59`);
+      if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
+      if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
 
       const { data: pickedUpData } = await avgQuery;
 
@@ -555,7 +557,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch block stats for cards - only pending packages (ignores selectedBlock/selectedApartment/statusFilter so cards don't disappear)
   const { data: blockStatsData } = useQuery({
-    queryKey: ["porteiro-packages-block-stats", selectedCondominium, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -571,11 +573,11 @@ const PorteiroPackagesHistory = () => {
         .eq("status", "pendente");
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
@@ -1115,6 +1117,74 @@ const PorteiroPackagesHistory = () => {
                   <SelectItem value="retirada">Retiradas</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Filtro por período: cadastro ou retirada */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
+                <Select
+                  value={dateField}
+                  onValueChange={(v) => {
+                    setDateField(v as "received_at" | "picked_up_at");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-[190px]">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Tipo de data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received_at">Data do cadastro</SelectItem>
+                    <SelectItem value="picked_up_at">Data da retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] text-muted-foreground" htmlFor="date-from">
+                      De
+                    </label>
+                    <input
+                      id="date-from"
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] text-muted-foreground" htmlFor="date-to">
+                      Até
+                    </label>
+                    <input
+                      id="date-to"
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-5"
+                      onClick={() => {
+                        setDateFrom("");
+                        setDateTo("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
