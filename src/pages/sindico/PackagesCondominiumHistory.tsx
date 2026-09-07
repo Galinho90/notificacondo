@@ -882,7 +882,22 @@ const PackagesCondominiumHistory = () => {
             </div>
 
             {/* Additional Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tipo de Data</label>
+                <Select
+                  value={dateField}
+                  onValueChange={(v) => setDateField(v as "received_at" | "picked_up_at")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received_at">Data do cadastro</SelectItem>
+                    <SelectItem value="picked_up_at">Data da retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Data Inicial</label>
                 <input
