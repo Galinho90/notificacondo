@@ -233,7 +233,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
@@ -322,7 +322,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch total count for pagination
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -342,11 +342,11 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { count, error } = await query;
@@ -360,7 +360,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch packages for selected condominium with pagination
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, currentPage],
+    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -406,11 +406,11 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
@@ -496,7 +496,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, dateField],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
@@ -507,8 +507,8 @@ const PorteiroPackagesHistory = () => {
         if (selectedBlock !== "all") query = query.eq("block_id", selectedBlock);
         if (selectedApartment !== "all") query = query.eq("apartment_id", selectedApartment);
         if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
-        if (dateFrom) query = query.gte("received_at", dateFrom);
-        if (dateTo) query = query.lte("received_at", `${dateTo}T23:59:59`);
+        if (dateFrom) query = query.gte(dateField, dateFrom);
+        if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
@@ -531,8 +531,8 @@ const PorteiroPackagesHistory = () => {
 
       if (selectedBlock !== "all") avgQuery = avgQuery.eq("block_id", selectedBlock);
       if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
-      if (dateFrom) avgQuery = avgQuery.gte("received_at", dateFrom);
-      if (dateTo) avgQuery = avgQuery.lte("received_at", `${dateTo}T23:59:59`);
+      if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
+      if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
 
       const { data: pickedUpData } = await avgQuery;
 
@@ -557,7 +557,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch block stats for cards - only pending packages (ignores selectedBlock/selectedApartment/statusFilter so cards don't disappear)
   const { data: blockStatsData } = useQuery({
-    queryKey: ["porteiro-packages-block-stats", selectedCondominium, dateFrom, dateTo],
+    queryKey: ["porteiro-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -573,11 +573,11 @@ const PorteiroPackagesHistory = () => {
         .eq("status", "pendente");
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
