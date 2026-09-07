@@ -143,6 +143,8 @@ const PorteiroPackagesHistory = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
+  const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
