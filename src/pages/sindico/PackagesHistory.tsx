@@ -113,6 +113,8 @@ const PackagesHistory = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
+  const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -181,7 +183,7 @@ const PackagesHistory = () => {
 
   // Fetch packages for selected apartment
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -212,11 +214,11 @@ const PackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
@@ -710,7 +712,22 @@ const PackagesHistory = () => {
             </div>
 
             {/* Additional Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tipo de Data</label>
+                <Select
+                  value={dateField}
+                  onValueChange={(v) => setDateField(v as "received_at" | "picked_up_at")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received_at">Data do cadastro</SelectItem>
+                    <SelectItem value="picked_up_at">Data da retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Data Inicial</label>
                 <input
