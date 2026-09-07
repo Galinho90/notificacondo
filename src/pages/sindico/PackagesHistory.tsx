@@ -113,6 +113,8 @@ const PackagesHistory = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
+  const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -181,7 +183,7 @@ const PackagesHistory = () => {
 
   // Fetch packages for selected apartment
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo],
+    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -212,11 +214,11 @@ const PackagesHistory = () => {
       }
 
       if (dateFrom) {
-        query = query.gte("received_at", dateFrom);
+        query = query.gte(dateField, dateFrom);
       }
 
       if (dateTo) {
-        query = query.lte("received_at", `${dateTo}T23:59:59`);
+        query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
       const { data, error } = await query;
