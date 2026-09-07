@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -121,6 +121,41 @@ export type Database = {
         }
         Relationships: []
       }
+      banner_acknowledgments: {
+        Row: {
+          acknowledged_at: string
+          banner_id: string
+          created_at: string
+          full_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          banner_id: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string
+          banner_id?: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_acknowledgments_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "condominium_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           condominium_id: string
@@ -170,7 +205,9 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
+          image_url: string | null
           is_active: boolean
+          show_as_modal: boolean
           text_color: string
           title: string
           updated_at: string
@@ -182,7 +219,9 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          show_as_modal?: boolean
           text_color?: string
           title: string
           updated_at?: string
@@ -194,7 +233,9 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          show_as_modal?: boolean
           text_color?: string
           title?: string
           updated_at?: string
@@ -292,17 +333,22 @@ export type Database = {
         Row: {
           address: string | null
           address_number: string | null
+          administradora_email: string | null
           city: string | null
           cnpj: string | null
           convention_url: string | null
           created_at: string
+          default_fine_percentage: number | null
           defense_deadline_days: number
+          gatehouse_phone: string | null
           id: string
           internal_rules_url: string | null
+          logo_url: string | null
           name: string
           neighborhood: string | null
           owner_id: string
           phone: string | null
+          sindico_name: string | null
           state: string | null
           updated_at: string
           zip_code: string | null
@@ -310,17 +356,22 @@ export type Database = {
         Insert: {
           address?: string | null
           address_number?: string | null
+          administradora_email?: string | null
           city?: string | null
           cnpj?: string | null
           convention_url?: string | null
           created_at?: string
+          default_fine_percentage?: number | null
           defense_deadline_days?: number
+          gatehouse_phone?: string | null
           id?: string
           internal_rules_url?: string | null
+          logo_url?: string | null
           name: string
           neighborhood?: string | null
           owner_id: string
           phone?: string | null
+          sindico_name?: string | null
           state?: string | null
           updated_at?: string
           zip_code?: string | null
@@ -328,17 +379,22 @@ export type Database = {
         Update: {
           address?: string | null
           address_number?: string | null
+          administradora_email?: string | null
           city?: string | null
           cnpj?: string | null
           convention_url?: string | null
           created_at?: string
+          default_fine_percentage?: number | null
           defense_deadline_days?: number
+          gatehouse_phone?: string | null
           id?: string
           internal_rules_url?: string | null
+          logo_url?: string | null
           name?: string
           neighborhood?: string | null
           owner_id?: string
           phone?: string | null
+          sindico_name?: string | null
           state?: string | null
           updated_at?: string
           zip_code?: string | null
@@ -570,6 +626,60 @@ export type Database = {
           triggered_by?: string | null
         }
         Relationships: []
+      }
+      expired_defense_email_logs: {
+        Row: {
+          condominium_id: string
+          error_message: string | null
+          id: string
+          message_id: string | null
+          occurrence_id: string
+          recipient_email: string | null
+          sent_at: string
+          success: boolean
+          triggered_by: string
+          triggered_by_user: string | null
+        }
+        Insert: {
+          condominium_id: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          occurrence_id: string
+          recipient_email?: string | null
+          sent_at?: string
+          success?: boolean
+          triggered_by?: string
+          triggered_by_user?: string | null
+        }
+        Update: {
+          condominium_id?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          occurrence_id?: string
+          recipient_email?: string | null
+          sent_at?: string
+          success?: boolean
+          triggered_by?: string
+          triggered_by_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expired_defense_email_logs_condominium_id_fkey"
+            columns: ["condominium_id"]
+            isOneToOne: false
+            referencedRelation: "condominiums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expired_defense_email_logs_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fines: {
         Row: {
@@ -1154,6 +1264,69 @@ export type Database = {
           },
         ]
       }
+      occurrence_pdf_template: {
+        Row: {
+          closing_remarks: string
+          defense_deadline_paragraph: string
+          footer_text: string
+          id: string
+          intro_paragraph: string
+          penalty_advertencia_paragraph: string
+          penalty_multa_paragraph: string
+          penalty_notificacao_paragraph: string
+          signature_label: string
+          syndic_role_paragraph: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          closing_remarks?: string
+          defense_deadline_paragraph?: string
+          footer_text?: string
+          id?: string
+          intro_paragraph?: string
+          penalty_advertencia_paragraph?: string
+          penalty_multa_paragraph?: string
+          penalty_notificacao_paragraph?: string
+          signature_label?: string
+          syndic_role_paragraph?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          closing_remarks?: string
+          defense_deadline_paragraph?: string
+          footer_text?: string
+          id?: string
+          intro_paragraph?: string
+          penalty_advertencia_paragraph?: string
+          penalty_multa_paragraph?: string
+          penalty_notificacao_paragraph?: string
+          signature_label?: string
+          syndic_role_paragraph?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      occurrence_protocol_counters: {
+        Row: {
+          last_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          last_number?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       occurrences: {
         Row: {
           apartment_id: string | null
@@ -1163,13 +1336,20 @@ export type Database = {
           convention_article: string | null
           created_at: string
           description: string
+          fine_percentage: number | null
           id: string
           internal_rules_article: string | null
           legal_basis: string | null
           location: string | null
           occurred_at: string
+          protocol: string | null
+          protocol_number: number | null
+          protocol_year: number | null
           registered_by: string
           resident_id: string | null
+          responsible_name: string | null
+          responsible_party: string | null
+          responsible_phone: string | null
           status: Database["public"]["Enums"]["occurrence_status"]
           title: string
           type: Database["public"]["Enums"]["occurrence_type"]
@@ -1183,13 +1363,20 @@ export type Database = {
           convention_article?: string | null
           created_at?: string
           description: string
+          fine_percentage?: number | null
           id?: string
           internal_rules_article?: string | null
           legal_basis?: string | null
           location?: string | null
           occurred_at: string
+          protocol?: string | null
+          protocol_number?: number | null
+          protocol_year?: number | null
           registered_by: string
           resident_id?: string | null
+          responsible_name?: string | null
+          responsible_party?: string | null
+          responsible_phone?: string | null
           status?: Database["public"]["Enums"]["occurrence_status"]
           title: string
           type: Database["public"]["Enums"]["occurrence_type"]
@@ -1203,13 +1390,20 @@ export type Database = {
           convention_article?: string | null
           created_at?: string
           description?: string
+          fine_percentage?: number | null
           id?: string
           internal_rules_article?: string | null
           legal_basis?: string | null
           location?: string | null
           occurred_at?: string
+          protocol?: string | null
+          protocol_number?: number | null
+          protocol_year?: number | null
           registered_by?: string
           resident_id?: string | null
+          responsible_name?: string | null
+          responsible_party?: string | null
+          responsible_phone?: string | null
           status?: Database["public"]["Enums"]["occurrence_status"]
           title?: string
           type?: Database["public"]["Enums"]["occurrence_type"]
@@ -1242,6 +1436,78 @@ export type Database = {
             columns: ["resident_id"]
             isOneToOne: false
             referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_deletion_requests: {
+        Row: {
+          condominium_id: string
+          created_at: string
+          id: string
+          package_apartment_number: string | null
+          package_block_name: string | null
+          package_condominium_name: string | null
+          package_id: string | null
+          package_pickup_code: string | null
+          reason: string
+          requested_by: string | null
+          requested_by_name: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          status: string
+        }
+        Insert: {
+          condominium_id: string
+          created_at?: string
+          id?: string
+          package_apartment_number?: string | null
+          package_block_name?: string | null
+          package_condominium_name?: string | null
+          package_id?: string | null
+          package_pickup_code?: string | null
+          reason: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string
+        }
+        Update: {
+          condominium_id?: string
+          created_at?: string
+          id?: string
+          package_apartment_number?: string | null
+          package_block_name?: string | null
+          package_condominium_name?: string | null
+          package_id?: string | null
+          package_pickup_code?: string | null
+          reason?: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_deletion_requests_condominium_id_fkey"
+            columns: ["condominium_id"]
+            isOneToOne: false
+            referencedRelation: "condominiums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_deletion_requests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
         ]
@@ -1285,6 +1551,8 @@ export type Database = {
           block_id: string
           condominium_id: string
           created_at: string
+          deleted_at: string | null
+          deletion_reason: string | null
           description: string | null
           id: string
           notification_count: number | null
@@ -1308,6 +1576,8 @@ export type Database = {
           block_id: string
           condominium_id: string
           created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
           description?: string | null
           id?: string
           notification_count?: number | null
@@ -1331,6 +1601,8 @@ export type Database = {
           block_id?: string
           condominium_id?: string
           created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
           description?: string | null
           id?: string
           notification_count?: number | null
@@ -1390,9 +1662,11 @@ export type Database = {
       party_hall_bookings: {
         Row: {
           booking_date: string
+          checklist_token: string | null
           condominium_id: string
           created_at: string
           end_time: string
+          gatehouse_notification_sent_at: string | null
           guest_count: number | null
           id: string
           notification_sent_at: string | null
@@ -1405,9 +1679,11 @@ export type Database = {
         }
         Insert: {
           booking_date: string
+          checklist_token?: string | null
           condominium_id: string
           created_at?: string
           end_time: string
+          gatehouse_notification_sent_at?: string | null
           guest_count?: number | null
           id?: string
           notification_sent_at?: string | null
@@ -1420,9 +1696,11 @@ export type Database = {
         }
         Update: {
           booking_date?: string
+          checklist_token?: string | null
           condominium_id?: string
           created_at?: string
           end_time?: string
+          gatehouse_notification_sent_at?: string | null
           guest_count?: number | null
           id?: string
           notification_sent_at?: string | null
@@ -1576,6 +1854,69 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "party_hall_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      party_hall_digital_checklists: {
+        Row: {
+          booking_id: string
+          condominium_id: string
+          created_at: string
+          general_observations: string | null
+          id: string
+          items: Json
+          signature_image: string
+          signed_at: string
+          signer_email: string
+          signer_geolocation: Json | null
+          signer_ip: string | null
+          signer_name: string
+          token: string
+        }
+        Insert: {
+          booking_id: string
+          condominium_id: string
+          created_at?: string
+          general_observations?: string | null
+          id?: string
+          items?: Json
+          signature_image: string
+          signed_at?: string
+          signer_email: string
+          signer_geolocation?: Json | null
+          signer_ip?: string | null
+          signer_name: string
+          token: string
+        }
+        Update: {
+          booking_id?: string
+          condominium_id?: string
+          created_at?: string
+          general_observations?: string | null
+          id?: string
+          items?: Json
+          signature_image?: string
+          signed_at?: string
+          signer_email?: string
+          signer_geolocation?: Json | null
+          signer_ip?: string | null
+          signer_name?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "party_hall_digital_checklists_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "party_hall_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "party_hall_digital_checklists_condominium_id_fkey"
+            columns: ["condominium_id"]
+            isOneToOne: false
+            referencedRelation: "condominiums"
             referencedColumns: ["id"]
           },
         ]
@@ -1858,14 +2199,22 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          is_signed: boolean | null
           occurred_at: string
+          photos: string[]
           priority: string
+          protocol: string | null
+          protocol_number: number | null
+          protocol_year: number | null
           registered_by: string
+          registered_by_name: string | null
           reporter_apartment_id: string | null
           reporter_block_id: string | null
           resolution_notes: string | null
           resolved_at: string | null
           resolved_by: string | null
+          resolved_by_name: string | null
+          signature_hash: string | null
           status: string
           target_apartment_id: string | null
           target_block_id: string | null
@@ -1878,14 +2227,22 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          is_signed?: boolean | null
           occurred_at?: string
+          photos?: string[]
           priority?: string
+          protocol?: string | null
+          protocol_number?: number | null
+          protocol_year?: number | null
           registered_by: string
+          registered_by_name?: string | null
           reporter_apartment_id?: string | null
           reporter_block_id?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          resolved_by_name?: string | null
+          signature_hash?: string | null
           status?: string
           target_apartment_id?: string | null
           target_block_id?: string | null
@@ -1898,14 +2255,22 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          is_signed?: boolean | null
           occurred_at?: string
+          photos?: string[]
           priority?: string
+          protocol?: string | null
+          protocol_number?: number | null
+          protocol_year?: number | null
           registered_by?: string
+          registered_by_name?: string | null
           reporter_apartment_id?: string | null
           reporter_block_id?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          resolved_by_name?: string | null
+          signature_hash?: string | null
           status?: string
           target_apartment_id?: string | null
           target_block_id?: string | null
@@ -1953,10 +2318,13 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          certificate_password: string | null
+          certificate_url: string | null
           cpf: string | null
           created_at: string
           email: string
           full_name: string
+          has_certificate: boolean
           id: string
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
@@ -1966,10 +2334,13 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          certificate_password?: string | null
+          certificate_url?: string | null
           cpf?: string | null
           created_at?: string
           email: string
           full_name: string
+          has_certificate?: boolean
           id?: string
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
@@ -1979,10 +2350,13 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          certificate_password?: string | null
+          certificate_url?: string | null
           cpf?: string | null
           created_at?: string
           email?: string
           full_name?: string
+          has_certificate?: boolean
           id?: string
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
@@ -1991,6 +2365,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      property_owners: {
+        Row: {
+          address: string | null
+          condominium_id: string
+          cpf: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          condominium_id: string
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          condominium_id?: string
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_owners_condominium_id_fkey"
+            columns: ["condominium_id"]
+            isOneToOne: false
+            referencedRelation: "condominiums"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       residents: {
         Row: {
@@ -2005,7 +2423,12 @@ export type Database = {
           is_responsible: boolean
           move_in_date: string | null
           move_out_date: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
           phone: string | null
+          property_owner_id: string | null
+          resident_type: string
           updated_at: string
           user_id: string | null
         }
@@ -2021,7 +2444,12 @@ export type Database = {
           is_responsible?: boolean
           move_in_date?: string | null
           move_out_date?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
+          property_owner_id?: string | null
+          resident_type?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -2037,7 +2465,12 @@ export type Database = {
           is_responsible?: boolean
           move_in_date?: string | null
           move_out_date?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
+          property_owner_id?: string | null
+          resident_type?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -2047,6 +2480,13 @@ export type Database = {
             columns: ["apartment_id"]
             isOneToOne: false
             referencedRelation: "apartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "residents_property_owner_id_fkey"
+            columns: ["property_owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
             referencedColumns: ["id"]
           },
         ]
@@ -2168,6 +2608,75 @@ export type Database = {
           },
         ]
       }
+      signed_documents: {
+        Row: {
+          created_at: string
+          file_hash: string
+          file_name: string
+          id: string
+          signer_id: string | null
+          signer_name: string
+        }
+        Insert: {
+          created_at?: string
+          file_hash: string
+          file_name: string
+          id?: string
+          signer_id?: string | null
+          signer_name: string
+        }
+        Update: {
+          created_at?: string
+          file_hash?: string
+          file_name?: string
+          id?: string
+          signer_id?: string | null
+          signer_name?: string
+        }
+        Relationships: []
+      }
+      smtp_config: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string
+          host: string
+          id: string
+          is_active: boolean
+          password: string
+          port: number
+          secure: boolean
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name?: string
+          host: string
+          id?: string
+          is_active?: boolean
+          password: string
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          host?: string
+          id?: string
+          is_active?: boolean
+          password?: string
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           active: boolean
@@ -2256,18 +2765,21 @@ export type Database = {
           condominium_id: string
           created_at: string | null
           id: string
+          is_active: boolean
           user_id: string
         }
         Insert: {
           condominium_id: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           user_id: string
         }
         Update: {
           condominium_id?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           user_id?: string
         }
         Relationships: [
@@ -2342,7 +2854,6 @@ export type Database = {
           is_active: boolean
           provider: string
           updated_at: string
-          use_official_api: boolean | null
           use_waba_templates: boolean | null
         }
         Insert: {
@@ -2355,7 +2866,6 @@ export type Database = {
           is_active?: boolean
           provider?: string
           updated_at?: string
-          use_official_api?: boolean | null
           use_waba_templates?: boolean | null
         }
         Update: {
@@ -2368,10 +2878,87 @@ export type Database = {
           is_active?: boolean
           provider?: string
           updated_at?: string
-          use_official_api?: boolean | null
           use_waba_templates?: boolean | null
         }
         Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          bsuid: string | null
+          condominium_id: string | null
+          content: string | null
+          conversation_window_expires_at: string | null
+          created_at: string
+          direction: string
+          error_message: string | null
+          from_phone: string | null
+          id: string
+          media_id: string | null
+          media_mime_type: string | null
+          media_url: string | null
+          message_type: string
+          meta_message_id: string | null
+          resident_id: string | null
+          resident_name: string | null
+          status: string | null
+          to_phone: string | null
+        }
+        Insert: {
+          bsuid?: string | null
+          condominium_id?: string | null
+          content?: string | null
+          conversation_window_expires_at?: string | null
+          created_at?: string
+          direction: string
+          error_message?: string | null
+          from_phone?: string | null
+          id?: string
+          media_id?: string | null
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_type?: string
+          meta_message_id?: string | null
+          resident_id?: string | null
+          resident_name?: string | null
+          status?: string | null
+          to_phone?: string | null
+        }
+        Update: {
+          bsuid?: string | null
+          condominium_id?: string | null
+          content?: string | null
+          conversation_window_expires_at?: string | null
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          from_phone?: string | null
+          id?: string
+          media_id?: string | null
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_type?: string
+          meta_message_id?: string | null
+          resident_id?: string | null
+          resident_name?: string | null
+          status?: string | null
+          to_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_condominium_id_fkey"
+            columns: ["condominium_id"]
+            isOneToOne: false
+            referencedRelation: "condominiums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "residents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_notification_logs: {
         Row: {
@@ -2387,12 +2974,13 @@ export type Database = {
           package_id: string | null
           phone: string | null
           read_at: string | null
+          recipient_role: string | null
           request_payload: Json | null
           resident_id: string | null
           response_body: string | null
           response_status: number | null
           sent_at: string | null
-          status: string
+          status: string | null
           success: boolean
           template_language: string | null
           template_name: string | null
@@ -2410,12 +2998,13 @@ export type Database = {
           package_id?: string | null
           phone?: string | null
           read_at?: string | null
+          recipient_role?: string | null
           request_payload?: Json | null
           resident_id?: string | null
           response_body?: string | null
           response_status?: number | null
           sent_at?: string | null
-          status?: string
+          status?: string | null
           success?: boolean
           template_language?: string | null
           template_name?: string | null
@@ -2433,12 +3022,13 @@ export type Database = {
           package_id?: string | null
           phone?: string | null
           read_at?: string | null
+          recipient_role?: string | null
           request_payload?: Json | null
           resident_id?: string | null
           response_body?: string | null
           response_status?: number | null
           sent_at?: string | null
-          status?: string
+          status?: string | null
           success?: boolean
           template_language?: string | null
           template_name?: string | null
@@ -2506,6 +3096,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_package_deletion_request: {
+        Args: { _request_id: string; _reviewer_name?: string }
+        Returns: Json
+      }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_old_password_recovery_attempts: {
         Args: never
@@ -2523,12 +3117,24 @@ export type Database = {
         Args: { _apartment_id: string }
         Returns: string
       }
+      get_banner_acknowledgments: {
+        Args: { _banner_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_co_porters: {
         Args: { _condominium_id: string; _user_id: string }
         Returns: {
           full_name: string
           user_id: string
         }[]
+      }
+      get_condominium_porteiros_count: {
+        Args: { _condominium_id: string }
+        Returns: number
       }
       get_cron_job_pause_status: {
         Args: never
@@ -2575,6 +3181,8 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_signed_package: { Args: { _hash: string }; Returns: Json }
+      get_signed_porter_occurrence: { Args: { _hash: string }; Returns: Json }
       get_user_condominium_ids: {
         Args: { _user_id: string }
         Returns: string[]
@@ -2647,12 +3255,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2676,11 +3284,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2701,11 +3309,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2726,11 +3334,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2743,11 +3351,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
