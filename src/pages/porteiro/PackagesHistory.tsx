@@ -234,7 +234,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
