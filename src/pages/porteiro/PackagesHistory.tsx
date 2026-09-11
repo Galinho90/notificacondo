@@ -365,7 +365,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch packages for selected condominium with pagination
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage],
+    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage, trackingCodeSearch],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -416,6 +416,10 @@ const PorteiroPackagesHistory = () => {
 
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { data, error } = await query;
