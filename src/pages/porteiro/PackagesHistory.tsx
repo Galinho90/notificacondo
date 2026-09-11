@@ -505,7 +505,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
@@ -518,6 +518,7 @@ const PorteiroPackagesHistory = () => {
         if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
         if (dateFrom) query = query.gte(dateField, dateFrom);
         if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
+        if (trackingCodeSearch.trim()) query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
