@@ -184,7 +184,7 @@ const PackagesHistory = () => {
 
   // Fetch packages for selected apartment
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -220,6 +220,10 @@ const PackagesHistory = () => {
 
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { data, error } = await query;
