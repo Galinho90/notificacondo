@@ -543,6 +543,7 @@ const PorteiroPackagesHistory = () => {
       if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
       if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
       if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
+      if (trackingCodeSearch.trim()) avgQuery = avgQuery.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
 
       const { data: pickedUpData } = await avgQuery;
 
