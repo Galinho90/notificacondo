@@ -720,7 +720,7 @@ const PackagesHistory = () => {
             </div>
 
             {/* Additional Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 pt-4 border-t">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo de Data</label>
                 <Select
@@ -766,6 +766,30 @@ const PackagesHistory = () => {
                     <SelectItem value="retirada">Retiradas</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                <label className="text-sm font-medium">Código de Rastreio</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por código de rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => setTrackingCodeSearch(e.target.value)}
+                    className="pl-10 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setTrackingCodeSearch("")}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
