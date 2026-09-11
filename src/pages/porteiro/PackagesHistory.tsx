@@ -8,6 +8,7 @@ import { useDateFormatter } from "@/hooks/useFormattedDate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -145,6 +146,7 @@ const PorteiroPackagesHistory = () => {
   const [dateTo, setDateTo] = useState<string>("");
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
+  const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
@@ -233,7 +235,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
@@ -322,7 +324,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch total count for pagination
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -349,6 +351,10 @@ const PorteiroPackagesHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      }
+
       const { count, error } = await query;
       if (error) throw error;
       return count || 0;
@@ -360,7 +366,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch packages for selected condominium with pagination
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage],
+    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage, trackingCodeSearch],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -411,6 +417,10 @@ const PorteiroPackagesHistory = () => {
 
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { data, error } = await query;
@@ -496,7 +506,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
@@ -509,6 +519,7 @@ const PorteiroPackagesHistory = () => {
         if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
         if (dateFrom) query = query.gte(dateField, dateFrom);
         if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
+        if (trackingCodeSearch.trim()) query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
@@ -533,6 +544,7 @@ const PorteiroPackagesHistory = () => {
       if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
       if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
       if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
+      if (trackingCodeSearch.trim()) avgQuery = avgQuery.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
 
       const { data: pickedUpData } = await avgQuery;
 
@@ -1048,6 +1060,37 @@ const PorteiroPackagesHistory = () => {
                   className="w-full sm:w-[200px]"
                   placeholder="Ex: 0344, AF"
                 />
+              )}
+
+              {/* Tracking code search */}
+              {selectedCondominium && (
+                <div className="relative w-full sm:w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Código de rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => {
+                      setTrackingCodeSearch(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => {
+                        setTrackingCodeSearch("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               )}
 
               {/* Block Select */}

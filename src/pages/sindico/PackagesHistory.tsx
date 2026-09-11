@@ -10,6 +10,7 @@ import DashboardLayout from "@/components/layouts/DashboardLayout";
 import SindicoBreadcrumbs from "@/components/sindico/SindicoBreadcrumbs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -41,6 +42,8 @@ import {
   Layers,
   Timer,
   Eye,
+  Search,
+  XCircle,
 } from "lucide-react";
 import { PackageDetailsDialog } from "@/components/packages/PackageDetailsDialog";
 import type { Package as PackageType } from "@/hooks/usePackages";
@@ -115,6 +118,7 @@ const PackagesHistory = () => {
   const [dateTo, setDateTo] = useState<string>("");
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
+  const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -183,7 +187,7 @@ const PackagesHistory = () => {
 
   // Fetch packages for selected apartment
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -219,6 +223,10 @@ const PackagesHistory = () => {
 
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { data, error } = await query;
@@ -712,7 +720,7 @@ const PackagesHistory = () => {
             </div>
 
             {/* Additional Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 pt-4 border-t">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo de Data</label>
                 <Select
@@ -758,6 +766,30 @@ const PackagesHistory = () => {
                     <SelectItem value="retirada">Retiradas</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                <label className="text-sm font-medium">Código de Rastreio</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por código de rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => setTrackingCodeSearch(e.target.value)}
+                    className="pl-10 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setTrackingCodeSearch("")}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
