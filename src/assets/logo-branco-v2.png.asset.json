@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "409d34c8-d46c-4746-9e73-c067e549fb3b",
-  "project_id": "84df780a-ef8d-450e-ab5d-ecbf330a8b21",
-  "url": "/logos/logo-branco-v2.png",
-  "r2_key": "a/v1/84df780a-ef8d-450e-ab5d-ecbf330a8b21/409d34c8-d46c-4746-9e73-c067e549fb3b/logo-branco-v2.png",
-  "original_filename": "logo-branco-v2.png",
-  "size": 259090,
   "content_type": "image/png",
-  "created_at": "2026-07-01T04:21:16Z"
+  "created_at": "2026-07-01T04:21:16Z",
+  "original_filename": "logo-branco-v2.png",
+  "project_id": "df98a8ed-ec93-4bde-a3ad-bc8f153f6333",
+  "r2_key": "a/v1/df98a8ed-ec93-4bde-a3ad-bc8f153f6333/409d34c8-d46c-4746-9e73-c067e549fb3b/logo-branco-v2.png",
+  "size": 259090,
+  "url": "/logos/logo-branco-v2.png",
+  "version": 1
 }
