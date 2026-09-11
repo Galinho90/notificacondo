@@ -1061,6 +1061,37 @@ const PorteiroPackagesHistory = () => {
                 />
               )}
 
+              {/* Tracking code search */}
+              {selectedCondominium && (
+                <div className="relative w-full sm:w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Código de rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => {
+                      setTrackingCodeSearch(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => {
+                        setTrackingCodeSearch("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
+
               {/* Block Select */}
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
               <Select
