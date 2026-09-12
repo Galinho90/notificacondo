@@ -324,7 +324,7 @@ const PackagesCondominiumHistory = () => {
   });
 
   const { data: retiradaCount = 0 } = useQuery({
-    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField],
+    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -340,6 +340,9 @@ const PackagesCondominiumHistory = () => {
       }
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { count, error } = await query;
