@@ -147,6 +147,15 @@ const PorteiroPackagesHistory = () => {
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
+  // Busca por rastreio: debounce de 500ms e mínimo de 3 caracteres (evita varredura pesada no banco)
+  const [trackingFilter, setTrackingFilter] = useState<string>("");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const term = trackingCodeSearch.trim();
+      setTrackingFilter(term.length >= 3 ? term : "");
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [trackingCodeSearch]);
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
@@ -235,7 +244,7 @@ const PorteiroPackagesHistory = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch]);
+  }, [selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingFilter]);
 
   // Fetch signed URL when package details modal opens
   useEffect(() => {
@@ -324,7 +333,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch total count for pagination
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["porteiro-packages-count", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -351,8 +360,8 @@ const PorteiroPackagesHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { count, error } = await query;
@@ -366,7 +375,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch packages for selected condominium with pagination
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage, trackingCodeSearch],
+    queryKey: ["porteiro-condominium-packages", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, currentPage, trackingFilter],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -419,8 +428,8 @@ const PorteiroPackagesHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { data, error } = await query;
@@ -506,7 +515,7 @@ const PorteiroPackagesHistory = () => {
 
   // Fetch stats using separate count queries to avoid 1000-row limit
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["porteiro-packages-stats", selectedCondominium, selectedBlock, selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       const buildQuery = (extraStatus?: string) => {
         let query = supabase
@@ -519,7 +528,7 @@ const PorteiroPackagesHistory = () => {
         if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
         if (dateFrom) query = query.gte(dateField, dateFrom);
         if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
-        if (trackingCodeSearch.trim()) query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+        if (trackingFilter) query = query.ilike("tracking_code", `%${trackingFilter}%`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
@@ -544,7 +553,7 @@ const PorteiroPackagesHistory = () => {
       if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
       if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
       if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
-      if (trackingCodeSearch.trim()) avgQuery = avgQuery.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) avgQuery = avgQuery.ilike("tracking_code", `%${trackingFilter}%`);
 
       const { data: pickedUpData } = await avgQuery;
 

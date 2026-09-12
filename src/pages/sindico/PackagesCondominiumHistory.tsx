@@ -119,6 +119,15 @@ const PackagesCondominiumHistory = () => {
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
+  // Busca por rastreio: debounce de 500ms e mínimo de 3 caracteres (evita varredura pesada no banco)
+  const [trackingFilter, setTrackingFilter] = useState<string>("");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const term = trackingCodeSearch.trim();
+      setTrackingFilter(term.length >= 3 ? term : "");
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [trackingCodeSearch]);
   const [isExporting, setIsExporting] = useState(false);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
@@ -157,7 +166,7 @@ const PackagesCondominiumHistory = () => {
 
   // Fetch packages for selected condominium
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["condominium-packages", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["condominium-packages", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -199,8 +208,8 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { data, error } = await query.range(0, 9999);
@@ -238,7 +247,7 @@ const PackagesCondominiumHistory = () => {
 
   // Fetch block stats for cards (ignores selectedBlock/statusFilter so cards don't disappear)
   const { data: blockStatsData } = useQuery({
-    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -258,8 +267,8 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { data, error } = await query.range(0, 9999);
@@ -271,7 +280,7 @@ const PackagesCondominiumHistory = () => {
 
   // Count queries for accurate stats (not limited by row cap)
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["packages-count-total", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["packages-count-total", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -290,8 +299,8 @@ const PackagesCondominiumHistory = () => {
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { count, error } = await query;
@@ -302,7 +311,7 @@ const PackagesCondominiumHistory = () => {
   });
 
   const { data: pendenteCount = 0 } = useQuery({
-    queryKey: ["packages-count-pendente", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["packages-count-pendente", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -319,8 +328,8 @@ const PackagesCondominiumHistory = () => {
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { count, error } = await query;
@@ -331,7 +340,7 @@ const PackagesCondominiumHistory = () => {
   });
 
   const { data: retiradaCount = 0 } = useQuery({
-    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -348,8 +357,8 @@ const PackagesCondominiumHistory = () => {
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { count, error } = await query;

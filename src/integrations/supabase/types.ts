@@ -3206,6 +3206,8 @@ export type Database = {
         Args: { _condominium_id: string; _user_id: string }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       toggle_cron_job: { Args: { p_jobid: number }; Returns: boolean }
       toggle_cron_job_pause: {
         Args: { p_function_name: string }
