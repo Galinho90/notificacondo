@@ -48,6 +48,8 @@ import {
   TrendingUp,
   Copy,
   Eye,
+  Search,
+  XCircle,
 } from "lucide-react";
 import { PackageDetailsDialog } from "@/components/packages/PackageDetailsDialog";
 import type { Package as PackageType } from "@/hooks/usePackages";
