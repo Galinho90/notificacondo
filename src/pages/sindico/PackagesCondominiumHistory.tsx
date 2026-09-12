@@ -235,7 +235,7 @@ const PackagesCondominiumHistory = () => {
 
   // Fetch block stats for cards (ignores selectedBlock/statusFilter so cards don't disappear)
   const { data: blockStatsData } = useQuery({
-    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField],
+    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -253,6 +253,10 @@ const PackagesCondominiumHistory = () => {
 
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { data, error } = await query.range(0, 9999);
