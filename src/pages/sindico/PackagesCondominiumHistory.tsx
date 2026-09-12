@@ -10,6 +10,7 @@ import DashboardLayout from "@/components/layouts/DashboardLayout";
 import SindicoBreadcrumbs from "@/components/sindico/SindicoBreadcrumbs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -47,6 +48,8 @@ import {
   TrendingUp,
   Copy,
   Eye,
+  Search,
+  XCircle,
 } from "lucide-react";
 import { PackageDetailsDialog } from "@/components/packages/PackageDetailsDialog";
 import type { Package as PackageType } from "@/hooks/usePackages";
@@ -115,6 +118,7 @@ const PackagesCondominiumHistory = () => {
   const [dateTo, setDateTo] = useState<string>("");
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
+  const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
@@ -153,7 +157,7 @@ const PackagesCondominiumHistory = () => {
 
   // Fetch packages for selected condominium
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["condominium-packages", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["condominium-packages", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -195,6 +199,10 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      }
+
       const { data, error } = await query.range(0, 9999);
       if (error) throw error;
 
@@ -230,7 +238,7 @@ const PackagesCondominiumHistory = () => {
 
   // Fetch block stats for cards (ignores selectedBlock/statusFilter so cards don't disappear)
   const { data: blockStatsData } = useQuery({
-    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField],
+    queryKey: ["sindico-packages-block-stats", selectedCondominium, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -250,6 +258,10 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      }
+
       const { data, error } = await query.range(0, 9999);
       if (error) throw error;
       return data || [];
@@ -259,7 +271,7 @@ const PackagesCondominiumHistory = () => {
 
   // Count queries for accurate stats (not limited by row cap)
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["packages-count-total", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField],
+    queryKey: ["packages-count-total", selectedCondominium, selectedBlock, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -278,6 +290,9 @@ const PackagesCondominiumHistory = () => {
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      }
 
       const { count, error } = await query;
       if (error) throw error;
@@ -287,7 +302,7 @@ const PackagesCondominiumHistory = () => {
   });
 
   const { data: pendenteCount = 0 } = useQuery({
-    queryKey: ["packages-count-pendente", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField],
+    queryKey: ["packages-count-pendente", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -304,6 +319,9 @@ const PackagesCondominiumHistory = () => {
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      }
 
       const { count, error } = await query;
       if (error) throw error;
@@ -313,7 +331,7 @@ const PackagesCondominiumHistory = () => {
   });
 
   const { data: retiradaCount = 0 } = useQuery({
-    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField],
+    queryKey: ["packages-count-retirada", selectedCondominium, selectedBlock, dateFrom, dateTo, dateField, trackingCodeSearch],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -329,6 +347,9 @@ const PackagesCondominiumHistory = () => {
       }
       if (dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
+      }
+      if (trackingCodeSearch.trim()) {
+        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
       }
 
       const { count, error } = await query;
@@ -882,7 +903,7 @@ const PackagesCondominiumHistory = () => {
             </div>
 
             {/* Additional Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 pt-4 border-t">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo de Data</label>
                 <Select
@@ -928,6 +949,30 @@ const PackagesCondominiumHistory = () => {
                     <SelectItem value="retirada">Retiradas</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                <label className="text-sm font-medium">Código de Rastreio</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por código de rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => setTrackingCodeSearch(e.target.value)}
+                    className="pl-10 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setTrackingCodeSearch("")}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
