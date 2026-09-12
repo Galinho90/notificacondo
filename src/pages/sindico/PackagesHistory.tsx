@@ -119,6 +119,15 @@ const PackagesHistory = () => {
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
+  // Busca por rastreio: debounce de 500ms e mínimo de 3 caracteres (evita varredura pesada no banco)
+  const [trackingFilter, setTrackingFilter] = useState<string>("");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const term = trackingCodeSearch.trim();
+      setTrackingFilter(term.length >= 3 ? term : "");
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [trackingCodeSearch]);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -187,7 +196,7 @@ const PackagesHistory = () => {
 
   // Fetch packages for selected apartment
   const { data: packages = [], isLoading } = useQuery({
-    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingCodeSearch],
+    queryKey: ["apartment-packages", selectedApartment, statusFilter, dateFrom, dateTo, dateField, trackingFilter],
     queryFn: async () => {
       let query = supabase
         .from("packages")
@@ -225,8 +234,8 @@ const PackagesHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
-      if (trackingCodeSearch.trim()) {
-        query = query.ilike("tracking_code", `%${trackingCodeSearch.trim()}%`);
+      if (trackingFilter) {
+        query = query.ilike("tracking_code", `%${trackingFilter}%`);
       }
 
       const { data, error } = await query;
