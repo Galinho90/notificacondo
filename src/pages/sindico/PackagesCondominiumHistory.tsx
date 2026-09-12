@@ -115,6 +115,7 @@ const PackagesCondominiumHistory = () => {
   const [dateTo, setDateTo] = useState<string>("");
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
+  const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
