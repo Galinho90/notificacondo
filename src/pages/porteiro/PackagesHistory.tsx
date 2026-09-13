@@ -147,13 +147,12 @@ const PorteiroPackagesHistory = () => {
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
-  // Busca por rastreio: debounce de 500ms e mínimo de 3 caracteres (evita varredura pesada no banco)
+  // O índice trigram do banco permite pesquisar códigos curtos sem bloquear a tela.
   const [trackingFilter, setTrackingFilter] = useState<string>("");
   useEffect(() => {
     const timer = setTimeout(() => {
-      const term = trackingCodeSearch.trim();
-      setTrackingFilter(term.length >= 3 ? term : "");
-    }, 500);
+      setTrackingFilter(trackingCodeSearch.trim());
+    }, 400);
     return () => clearTimeout(timer);
   }, [trackingCodeSearch]);
   const [isExporting, setIsExporting] = useState(false);
@@ -340,23 +339,23 @@ const PorteiroPackagesHistory = () => {
         .select("id", { count: "exact", head: true })
         .eq("condominium_id", selectedCondominium);
 
-      if (selectedBlock !== "all") {
+      if (!trackingFilter && selectedBlock !== "all") {
         query = query.eq("block_id", selectedBlock);
       }
 
-      if (selectedApartment !== "all") {
+      if (!trackingFilter && selectedApartment !== "all") {
         query = query.eq("apartment_id", selectedApartment);
       }
 
-      if (statusFilter !== "all") {
+      if (!trackingFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter as "pendente" | "retirada");
       }
 
-      if (dateFrom) {
+      if (!trackingFilter && dateFrom) {
         query = query.gte(dateField, dateFrom);
       }
 
-      if (dateTo) {
+      if (!trackingFilter && dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
@@ -408,23 +407,23 @@ const PorteiroPackagesHistory = () => {
         .order("received_at", { ascending: false })
         .range(from, to);
 
-      if (selectedBlock !== "all") {
+      if (!trackingFilter && selectedBlock !== "all") {
         query = query.eq("block_id", selectedBlock);
       }
 
-      if (selectedApartment !== "all") {
+      if (!trackingFilter && selectedApartment !== "all") {
         query = query.eq("apartment_id", selectedApartment);
       }
 
-      if (statusFilter !== "all") {
+      if (!trackingFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter as "pendente" | "retirada");
       }
 
-      if (dateFrom) {
+      if (!trackingFilter && dateFrom) {
         query = query.gte(dateField, dateFrom);
       }
 
-      if (dateTo) {
+      if (!trackingFilter && dateTo) {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
 
@@ -523,11 +522,11 @@ const PorteiroPackagesHistory = () => {
           .select("id", { count: "exact", head: true })
           .eq("condominium_id", selectedCondominium);
 
-        if (selectedBlock !== "all") query = query.eq("block_id", selectedBlock);
-        if (selectedApartment !== "all") query = query.eq("apartment_id", selectedApartment);
-        if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
-        if (dateFrom) query = query.gte(dateField, dateFrom);
-        if (dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
+        if (!trackingFilter && selectedBlock !== "all") query = query.eq("block_id", selectedBlock);
+        if (!trackingFilter && selectedApartment !== "all") query = query.eq("apartment_id", selectedApartment);
+        if (!trackingFilter && statusFilter !== "all") query = query.eq("status", statusFilter as any);
+        if (!trackingFilter && dateFrom) query = query.gte(dateField, dateFrom);
+        if (!trackingFilter && dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
         if (trackingFilter) query = query.ilike("tracking_code", `%${trackingFilter}%`);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
@@ -549,10 +548,10 @@ const PorteiroPackagesHistory = () => {
         .order("picked_up_at", { ascending: false })
         .limit(200);
 
-      if (selectedBlock !== "all") avgQuery = avgQuery.eq("block_id", selectedBlock);
-      if (selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
-      if (dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
-      if (dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
+      if (!trackingFilter && selectedBlock !== "all") avgQuery = avgQuery.eq("block_id", selectedBlock);
+      if (!trackingFilter && selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
+      if (!trackingFilter && dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
+      if (!trackingFilter && dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
       if (trackingFilter) avgQuery = avgQuery.ilike("tracking_code", `%${trackingFilter}%`);
 
       const { data: pickedUpData } = await avgQuery;
