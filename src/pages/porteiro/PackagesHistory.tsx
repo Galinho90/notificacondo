@@ -360,7 +360,7 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { count, error } = await query;
@@ -428,7 +428,7 @@ const PorteiroPackagesHistory = () => {
       }
 
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { data, error } = await query;
@@ -527,7 +527,7 @@ const PorteiroPackagesHistory = () => {
         if (!trackingFilter && statusFilter !== "all") query = query.eq("status", statusFilter as any);
         if (!trackingFilter && dateFrom) query = query.gte(dateField, dateFrom);
         if (!trackingFilter && dateTo) query = query.lte(dateField, `${dateTo}T23:59:59`);
-        if (trackingFilter) query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        if (trackingFilter) query = query.eq("tracking_code", trackingFilter);
         if (extraStatus) query = query.eq("status", extraStatus as any);
         return query;
       };
@@ -552,7 +552,7 @@ const PorteiroPackagesHistory = () => {
       if (!trackingFilter && selectedApartment !== "all") avgQuery = avgQuery.eq("apartment_id", selectedApartment);
       if (!trackingFilter && dateFrom) avgQuery = avgQuery.gte(dateField, dateFrom);
       if (!trackingFilter && dateTo) avgQuery = avgQuery.lte(dateField, `${dateTo}T23:59:59`);
-      if (trackingFilter) avgQuery = avgQuery.ilike("tracking_code", `%${trackingFilter}%`);
+      if (trackingFilter) avgQuery = avgQuery.eq("tracking_code", trackingFilter);
 
       const { data: pickedUpData } = await avgQuery;
 

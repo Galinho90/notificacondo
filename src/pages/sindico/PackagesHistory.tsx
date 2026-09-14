@@ -235,7 +235,7 @@ const PackagesHistory = () => {
       }
 
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { data, error } = await query;
