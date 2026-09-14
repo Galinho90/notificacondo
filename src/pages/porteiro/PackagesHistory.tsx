@@ -1018,173 +1018,179 @@ const PorteiroPackagesHistory = () => {
           )}
         </div>
 
-        {/* Filters - Horizontal layout like Síndico */}
+        {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4 flex-wrap">
-              {/* Condominium Select */}
-              {condominiums.length > 1 && (
-                <Select
-                  value={selectedCondominium}
-                  onValueChange={(v) => {
-                    setSelectedCondominium(v);
-                    setSelectedBlock("all");
-                    setSelectedApartment("all");
-                  }}
-                >
-                  <SelectTrigger className="w-full md:w-[220px]">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Condomínio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {condominiums.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            <div className="space-y-3">
+              {/* Linha 1: Condomínio + Busca rápida + Código rastreio */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Condominium Select */}
+                {condominiums.length > 1 && (
+                  <Select
+                    value={selectedCondominium}
+                    onValueChange={(v) => {
+                      setSelectedCondominium(v);
+                      setSelectedBlock("all");
+                      setSelectedApartment("all");
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Condomínio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {condominiums.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-              {/* Quick Search - visible when condominium is selected */}
-              {selectedCondominium && (
-                <QuickBlockApartmentSearch
-                  condominiumId={selectedCondominium}
-                  onBlockFound={(blockId) => {
-                    setSelectedBlock(blockId);
-                    setCurrentPage(1);
-                  }}
-                  onApartmentFound={(apartmentId) => {
-                    setSelectedApartment(apartmentId);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full sm:w-[200px]"
-                  placeholder="Ex: 0344, AF"
-                />
-              )}
-
-              {/* Tracking code search */}
-              {selectedCondominium && (
-                <div className="relative w-full sm:w-[220px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Código de rastreio"
-                    value={trackingCodeSearch}
-                    onChange={(e) => {
-                      setTrackingCodeSearch(e.target.value);
+                {/* Quick Search */}
+                {selectedCondominium && (
+                  <QuickBlockApartmentSearch
+                    condominiumId={selectedCondominium}
+                    onBlockFound={(blockId) => {
+                      setSelectedBlock(blockId);
                       setCurrentPage(1);
                     }}
-                    className="pl-10 pr-8"
+                    onApartmentFound={(apartmentId) => {
+                      setSelectedApartment(apartmentId);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full sm:w-[180px]"
+                    placeholder="Ex: 0344, AF"
                   />
-                  {trackingCodeSearch && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                      onClick={() => {
-                        setTrackingCodeSearch("");
+                )}
+
+                {/* Tracking code search */}
+                {selectedCondominium && (
+                  <div className="relative w-full sm:w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Código rastreio"
+                      value={trackingCodeSearch}
+                      onChange={(e) => {
+                        setTrackingCodeSearch(e.target.value);
                         setCurrentPage(1);
                       }}
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </Button>
-                  )}
+                      className="pl-9 pr-8"
+                    />
+                    {trackingCodeSearch && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={() => {
+                          setTrackingCodeSearch("");
+                          setCurrentPage(1);
+                        }}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Linha 2: Bloco + Apto + Status + Tipo data */}
+              {selectedCondominium && (
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Block Select */}
+                  <Select
+                    value={selectedBlock}
+                    onValueChange={(v) => {
+                      setSelectedBlock(v);
+                      setSelectedApartment("all");
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[150px]">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Bloco" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os blocos</SelectItem>
+                      {blocks.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Apartment Select */}
+                  <Select
+                    value={selectedApartment}
+                    onValueChange={(v) => {
+                      setSelectedApartment(v);
+                      setCurrentPage(1);
+                    }}
+                    disabled={selectedBlock === "all"}
+                  >
+                    <SelectTrigger className="w-full sm:w-[120px]">
+                      <Home className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Apto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {apartments.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.number}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Status Select */}
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => {
+                      setStatusFilter(v);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[140px]">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="pendente">Pendentes</SelectItem>
+                      <SelectItem value="retirada">Retiradas</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Tipo de data */}
+                  <Select
+                    value={dateField}
+                    onValueChange={(v) => {
+                      setDateField(v as "received_at" | "picked_up_at");
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[160px]">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Tipo de data" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="received_at">Cadastro</SelectItem>
+                      <SelectItem value="picked_up_at">Retirada</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
-              {/* Block Select */}
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
-              <Select
-                value={selectedBlock}
-                onValueChange={(v) => {
-                  setSelectedBlock(v);
-                  setSelectedApartment("all");
-                  setCurrentPage(1);
-                }}
-                disabled={!selectedCondominium}
-              >
-                <SelectTrigger className="w-full sm:w-[160px]">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Bloco" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os blocos</SelectItem>
-                  {blocks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Apartment Select */}
-              <Select
-                value={selectedApartment}
-                onValueChange={(v) => {
-                  setSelectedApartment(v);
-                  setCurrentPage(1);
-                }}
-                disabled={selectedBlock === "all"}
-              >
-                <SelectTrigger className="w-full sm:w-[140px]">
-                  <Home className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Apto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {apartments.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.number}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              </div>
-
-              {/* Status Select */}
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => {
-                  setStatusFilter(v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                  <SelectItem value="retirada">Retiradas</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Filtro por período: cadastro ou retirada */}
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
-                <Select
-                  value={dateField}
-                  onValueChange={(v) => {
-                    setDateField(v as "received_at" | "picked_up_at");
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-[190px]">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Tipo de data" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="received_at">Data do cadastro</SelectItem>
-                    <SelectItem value="picked_up_at">Data da retirada</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] text-muted-foreground" htmlFor="date-from">
-                      De
+              {/* Linha 3: Período */}
+              {selectedCondominium && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-muted-foreground whitespace-nowrap" htmlFor="date-from">
+                      Período de
                     </label>
                     <input
                       id="date-from"
@@ -1196,10 +1202,8 @@ const PorteiroPackagesHistory = () => {
                       }}
                       className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] text-muted-foreground" htmlFor="date-to">
-                      Até
+                    <label className="text-sm text-muted-foreground" htmlFor="date-to">
+                      até
                     </label>
                     <input
                       id="date-to"
@@ -1216,7 +1220,6 @@ const PorteiroPackagesHistory = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-5"
                       onClick={() => {
                         setDateFrom("");
                         setDateTo("");
@@ -1228,14 +1231,14 @@ const PorteiroPackagesHistory = () => {
                     </Button>
                   )}
                 </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* Stats */}
         {selectedCondominium && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard
               title="Total"
               value={stats.total}
