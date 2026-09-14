@@ -209,7 +209,7 @@ const PackagesCondominiumHistory = () => {
       }
 
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { data, error } = await query.range(0, 9999);
@@ -268,7 +268,7 @@ const PackagesCondominiumHistory = () => {
       }
 
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { data, error } = await query.range(0, 9999);
@@ -300,7 +300,7 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { count, error } = await query;
@@ -329,7 +329,7 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { count, error } = await query;
@@ -358,7 +358,7 @@ const PackagesCondominiumHistory = () => {
         query = query.lte(dateField, `${dateTo}T23:59:59`);
       }
       if (trackingFilter) {
-        query = query.ilike("tracking_code", `%${trackingFilter}%`);
+        query = query.eq("tracking_code", trackingFilter);
       }
 
       const { count, error } = await query;
