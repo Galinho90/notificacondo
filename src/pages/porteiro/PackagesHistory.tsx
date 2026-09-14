@@ -1021,10 +1021,179 @@ const PorteiroPackagesHistory = () => {
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="space-y-3">
-              {/* Linha 1: Condomínio + Busca rápida + Código rastreio */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Condominium Select */}
+            {selectedCondominium ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {/* Block Select */}
+                <Select
+                  value={selectedBlock}
+                  onValueChange={(v) => {
+                    setSelectedBlock(v);
+                    setSelectedApartment("all");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Bloco" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os blocos</SelectItem>
+                    {blocks.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Apartment Select */}
+                <Select
+                  value={selectedApartment}
+                  onValueChange={(v) => {
+                    setSelectedApartment(v);
+                    setCurrentPage(1);
+                  }}
+                  disabled={selectedBlock === "all"}
+                >
+                  <SelectTrigger>
+                    <Home className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Apto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {apartments.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Status Select */}
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => {
+                    setStatusFilter(v);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="pendente">Pendentes</SelectItem>
+                    <SelectItem value="retirada">Retiradas</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Tipo de data */}
+                <Select
+                  value={dateField}
+                  onValueChange={(v) => {
+                    setDateField(v as "received_at" | "picked_up_at");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Tipo de data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received_at">Cadastro</SelectItem>
+                    <SelectItem value="picked_up_at">Retirada</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Date From */}
+                <div className="relative">
+                  <input
+                    id="date-from"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 pr-16 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="De"
+                  />
+                </div>
+
+                {/* Date To */}
+                <div className="relative flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground shrink-0">até</span>
+                  <input
+                    id="date-to"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  {(dateFrom || dateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-8 px-2"
+                      onClick={() => {
+                        setDateFrom("");
+                        setDateTo("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Quick Search */}
+                <QuickBlockApartmentSearch
+                  condominiumId={selectedCondominium}
+                  onBlockFound={(blockId) => {
+                    setSelectedBlock(blockId);
+                    setCurrentPage(1);
+                  }}
+                  onApartmentFound={(apartmentId) => {
+                    setSelectedApartment(apartmentId);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Buscar unidade..."
+                />
+
+                {/* Tracking code search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Código rastreio"
+                    value={trackingCodeSearch}
+                    onChange={(e) => {
+                      setTrackingCodeSearch(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-9 pr-8"
+                  />
+                  {trackingCodeSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => {
+                        setTrackingCodeSearch("");
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Condominium Select (only if multiple) */}
                 {condominiums.length > 1 && (
                   <Select
                     value={selectedCondominium}
@@ -1034,7 +1203,7 @@ const PorteiroPackagesHistory = () => {
                       setSelectedApartment("all");
                     }}
                   >
-                    <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectTrigger>
                       <Building2 className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Condomínio" />
                     </SelectTrigger>
@@ -1047,192 +1216,34 @@ const PorteiroPackagesHistory = () => {
                     </SelectContent>
                   </Select>
                 )}
-
-                {/* Quick Search */}
-                {selectedCondominium && (
-                  <QuickBlockApartmentSearch
-                    condominiumId={selectedCondominium}
-                    onBlockFound={(blockId) => {
-                      setSelectedBlock(blockId);
-                      setCurrentPage(1);
+              </div>
+            ) : (
+              /* Condominium selector when none selected */
+              <div className="flex flex-col sm:flex-row gap-3">
+                {condominiums.length > 1 && (
+                  <Select
+                    value={selectedCondominium}
+                    onValueChange={(v) => {
+                      setSelectedCondominium(v);
+                      setSelectedBlock("all");
+                      setSelectedApartment("all");
                     }}
-                    onApartmentFound={(apartmentId) => {
-                      setSelectedApartment(apartmentId);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full sm:w-[180px]"
-                    placeholder="Ex: 0344, AF"
-                  />
-                )}
-
-                {/* Tracking code search */}
-                {selectedCondominium && (
-                  <div className="relative w-full sm:w-[200px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Código rastreio"
-                      value={trackingCodeSearch}
-                      onChange={(e) => {
-                        setTrackingCodeSearch(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="pl-9 pr-8"
-                    />
-                    {trackingCodeSearch && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={() => {
-                          setTrackingCodeSearch("");
-                          setCurrentPage(1);
-                        }}
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+                  >
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Selecione o condomínio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {condominiums.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
-
-              {/* Linha 2: Bloco + Apto + Status + Tipo data */}
-              {selectedCondominium && (
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Block Select */}
-                  <Select
-                    value={selectedBlock}
-                    onValueChange={(v) => {
-                      setSelectedBlock(v);
-                      setSelectedApartment("all");
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-[150px]">
-                      <Building2 className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Bloco" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os blocos</SelectItem>
-                      {blocks.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Apartment Select */}
-                  <Select
-                    value={selectedApartment}
-                    onValueChange={(v) => {
-                      setSelectedApartment(v);
-                      setCurrentPage(1);
-                    }}
-                    disabled={selectedBlock === "all"}
-                  >
-                    <SelectTrigger className="w-full sm:w-[120px]">
-                      <Home className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Apto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      {apartments.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.number}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Status Select */}
-                  <Select
-                    value={statusFilter}
-                    onValueChange={(v) => {
-                      setStatusFilter(v);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-[140px]">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="pendente">Pendentes</SelectItem>
-                      <SelectItem value="retirada">Retiradas</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Tipo de data */}
-                  <Select
-                    value={dateField}
-                    onValueChange={(v) => {
-                      setDateField(v as "received_at" | "picked_up_at");
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-[160px]">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Tipo de data" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="received_at">Cadastro</SelectItem>
-                      <SelectItem value="picked_up_at">Retirada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Linha 3: Período */}
-              {selectedCondominium && (
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-muted-foreground whitespace-nowrap" htmlFor="date-from">
-                      Período de
-                    </label>
-                    <input
-                      id="date-from"
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => {
-                        setDateFrom(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                    <label className="text-sm text-muted-foreground" htmlFor="date-to">
-                      até
-                    </label>
-                    <input
-                      id="date-to"
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => {
-                        setDateTo(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                  </div>
-                  {(dateFrom || dateTo) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setDateFrom("");
-                        setDateTo("");
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Limpar
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </CardContent>
         </Card>
 
