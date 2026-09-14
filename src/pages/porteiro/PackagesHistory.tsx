@@ -147,14 +147,7 @@ const PorteiroPackagesHistory = () => {
   /** Campo de data usado no filtro: cadastro (received_at) ou retirada (picked_up_at) */
   const [dateField, setDateField] = useState<"received_at" | "picked_up_at">("received_at");
   const [trackingCodeSearch, setTrackingCodeSearch] = useState<string>("");
-  // O índice trigram do banco permite pesquisar códigos curtos sem bloquear a tela.
-  const [trackingFilter, setTrackingFilter] = useState<string>("");
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTrackingFilter(trackingCodeSearch.trim());
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [trackingCodeSearch]);
+  const trackingFilter = trackingCodeSearch.trim();
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPendingSummaryModal, setShowPendingSummaryModal] = useState(false);
