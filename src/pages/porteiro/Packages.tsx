@@ -743,6 +743,7 @@ export default function PorteiroPackages() {
           open={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           package_={detailsPackage}
+          showPickupCode={false}
         />
 
         {/* Notification Modal */}
