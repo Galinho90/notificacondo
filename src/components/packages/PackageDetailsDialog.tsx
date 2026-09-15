@@ -42,6 +42,7 @@ interface PackageDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   package_: Package | null;
   showPickupCode?: boolean;
+  isPorterView?: boolean;
 }
 
 type NotificationStatus = "idle" | "sending" | "success" | "error";
