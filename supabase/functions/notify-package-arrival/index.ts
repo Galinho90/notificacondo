@@ -129,11 +129,34 @@ serve(async (req) => {
       );
     }
 
-    const { package_id, apartment_id, pickup_code, photo_url } = body;
+    const { package_id, apartment_id, photo_url } = body;
+    // O código de retirada é sigiloso: quando o cliente não o envia (portaria),
+    // ele é resolvido aqui no servidor a partir do próprio registro da encomenda.
+    let pickup_code: string | undefined = body.pickup_code ?? undefined;
 
-    if (!package_id || !apartment_id || !pickup_code) {
+    if (!package_id || !apartment_id) {
       return new Response(
-        JSON.stringify({ error: "Dados incompletos: package_id, apartment_id e pickup_code são obrigatórios" }),
+        JSON.stringify({ error: "Dados incompletos: package_id e apartment_id são obrigatórios" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!pickup_code) {
+      const { data: pkgRow, error: pkgRowError } = await supabase
+        .from("packages")
+        .select("pickup_code")
+        .eq("id", package_id)
+        .maybeSingle();
+
+      if (pkgRowError) {
+        console.error("Erro ao buscar pickup_code da encomenda:", pkgRowError);
+      }
+      pickup_code = pkgRow?.pickup_code ?? undefined;
+    }
+
+    if (!pickup_code) {
+      return new Response(
+        JSON.stringify({ error: "Encomenda sem código de retirada válido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
