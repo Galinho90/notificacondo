@@ -23,6 +23,7 @@ import { NavLink } from "@/components/NavLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "next-themes";
 import ApartmentSwitcher from "@/components/resident/ApartmentSwitcher";
 import {
   Building2,
@@ -69,6 +70,7 @@ import logoIconAsset from "@/assets/logo-icon-v2.png.asset.json";
 const logoIcon = logoIconAsset.url;
 import logoDarkAsset from "@/assets/logo-branco-v2.png.asset.json";
 const logoWhite = logoDarkAsset.url;
+import logoLight from "@/assets/logo-preto.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -96,6 +98,90 @@ type NavStructure = (NavItem | NavGroup)[];
 const isNavGroup = (item: NavItem | NavGroup): item is NavGroup => {
   return 'items' in item;
 };
+
+function ThemeLogo() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <img
+        src={logoWhite}
+        alt="NotificaCondo"
+        className="object-contain transition-all duration-200 w-full h-auto max-h-28"
+      />
+    );
+  }
+
+  const isLight = resolvedTheme === "light";
+
+  return (
+    <>
+      <img
+        src={logoLight}
+        alt="NotificaCondo"
+        className={cn(
+          "object-contain transition-all duration-200 w-full h-auto max-h-28",
+          isLight ? "block" : "hidden"
+        )}
+      />
+      <img
+        src={logoWhite}
+        alt="NotificaCondo"
+        className={cn(
+          "object-contain transition-all duration-200 w-full h-auto max-h-28",
+          isLight ? "hidden" : "block"
+        )}
+      />
+    </>
+  );
+}
+
+function ThemeLogoCollapsed() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <img
+        src={logoIcon}
+        alt="NotificaCondo"
+        className="object-contain transition-all duration-200 w-full h-14"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={logoIcon}
+      alt="NotificaCondo"
+      className="object-contain transition-all duration-200 w-full h-14"
+    />
+  );
+}
+
+function HeaderMobileLogo() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <img src={logoIcon} alt="Logo" className="w-8 h-8 object-contain" />;
+  }
+
+  return <img src={logoIcon} alt="Logo" className="w-8 h-8 object-contain" />;
+}
 
 const getBaseSuperAdminNavItems = (): NavStructure => [
   { title: "Início", url: "/superadmin", icon: Home },
@@ -657,19 +743,9 @@ function SidebarNavigation() {
       <SidebarHeader className="p-4 pb-6">
         <div className="flex items-center justify-center w-full">
           {collapsed ? (
-            <img
-              src={logoIcon}
-              alt="NotificaCondo"
-              className="object-contain transition-all duration-200 w-full h-14"
-            />
+            <ThemeLogoCollapsed />
           ) : (
-            <>
-              <img
-                src={logoWhite}
-                alt="NotificaCondo"
-                className="object-contain transition-all duration-200 w-full h-auto max-h-28"
-              />
-            </>
+            <ThemeLogo />
           )}
         </div>
       </SidebarHeader>
@@ -965,7 +1041,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <SidebarTrigger className="hidden md:flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-lg transition-colors" />
               <MobileSidebarTrigger className="md:hidden" />
               <div className="flex items-center gap-2 md:hidden">
-                <img src={logoIcon} alt="Logo" className="w-8 h-8 object-contain" />
+                <HeaderMobileLogo />
               </div>
             </div>
             
