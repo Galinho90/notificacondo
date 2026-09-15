@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trash2, CheckCircle2, XCircle, Loader2, Clock, User, Building2, ImageOff, Package as PackageIcon, Filter, Search } from "lucide-react";
+import {
+  Trash2, CheckCircle2, XCircle, Loader2, Clock, User,
+  Building2, ImageOff, Package as PackageIcon, Search, Filter,
+  PackageCheck, X, ChevronDown, AlertCircle, Eye,
+} from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +44,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getSignedPackagePhotoUrl, deletePackagePhoto } from "@/lib/packageStorage";
+import { cn } from "@/lib/utils";
 
 type Status = "pendente" | "aprovada" | "rejeitada";
 
@@ -99,6 +104,41 @@ function getPackageDisplayInfo(req: DeletionRequest): PackageDisplayInfo {
   };
 }
 
+const STATUS_CONFIG = {
+  pendente: {
+    label: "Pendentes",
+    color: "text-yellow-600",
+    bg: "bg-yellow-50 dark:bg-yellow-950/30",
+    border: "border-yellow-200 dark:border-yellow-900",
+    badge: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    icon: AlertCircle,
+    iconBg: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-400",
+    emptyTitle: "Nenhuma pendente",
+    emptyDesc: "Solicitações de exclusão aparecerão aqui para sua aprovação.",
+  },
+  aprovada: {
+    label: "Aprovadas",
+    color: "text-green-600",
+    bg: "bg-green-50 dark:bg-green-950/30",
+    border: "border-green-200 dark:border-green-900",
+    badge: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    icon: CheckCircle2,
+    iconBg: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-400",
+    emptyTitle: "Nenhuma aprovada",
+    emptyDesc: "Solicitações aprovadas serão listadas aqui.",
+  },
+  rejeitada: {
+    label: "Rejeitadas",
+    color: "text-red-600",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    border: "border-red-200 dark:border-red-900",
+    badge: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    icon: XCircle,
+    iconBg: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-400",
+    emptyTitle: "Nenhuma rejeitada",
+    emptyDesc: "Solicitações rejeitadas aparecerão aqui.",
+  },
+} as const;
 
 export default function PackageDeletions() {
   const { user } = useAuth();
@@ -115,7 +155,7 @@ export default function PackageDeletions() {
   const [selectedBlock, setSelectedBlock] = useState<string>("");
   const [selectedApartment, setSelectedApartment] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
-
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -138,7 +178,6 @@ export default function PackageDeletions() {
       const list = (data as DeletionRequest[]) || [];
       setItems(list);
 
-      // Assinaturas temporárias para as fotos ainda existentes no Storage
       const withPhotos = list.filter((r) => r.package?.photo_url);
       if (withPhotos.length > 0) {
         const entries = await Promise.all(
@@ -155,7 +194,6 @@ export default function PackageDeletions() {
       } else {
         setPhotoByRequestId({});
       }
-
 
       const userIds = Array.from(new Set(list.map((r) => r.requested_by).filter(Boolean)));
       if (userIds.length > 0) {
@@ -248,8 +286,6 @@ export default function PackageDeletions() {
     if (!approveTarget || !user) return;
     setProcessing(true);
     try {
-      // Guardamos a foto ANTES da exclusão do registro — ela só será apagada
-      // do Storage depois que a aprovação for confirmada com sucesso.
       const photoUrlToDelete = approveTarget.package?.photo_url ?? null;
 
       const { error: approveError } = await (supabase as any).rpc(
@@ -274,7 +310,6 @@ export default function PackageDeletions() {
         }
       }
 
-      // Somente após a aprovação confirmada removemos a imagem do Storage.
       if (photoUrlToDelete) {
         const result = await deletePackagePhoto(photoUrlToDelete);
         if (!result.success) {
@@ -286,7 +321,6 @@ export default function PackageDeletions() {
       toast.success("Solicitação aprovada — encomenda e foto excluídas");
       setApproveTarget(null);
       fetchAll();
-
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Erro ao aprovar");
@@ -323,307 +357,341 @@ export default function PackageDeletions() {
     }
   };
 
+  const hasActiveFilters = selectedBlock || selectedApartment || searchQuery;
+
   return (
     <DashboardLayout>
       <Helmet>
         <title>NotificaCondo - Exclusões de Encomendas</title>
       </Helmet>
+
       <div className="space-y-6 p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Trash2 className="w-6 h-6" />
-            Exclusões de Encomendas
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Aprove ou rejeite solicitações de exclusão enviadas pela portaria.
-          </p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              Exclusões de Encomendas
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Gerencie solicitações de exclusão de encomendas enviadas pela portaria.
+            </p>
+          </div>
+
+          {/* Status counters */}
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium",
+                counts.pendente > 0
+                  ? "border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300"
+                  : "border-border text-muted-foreground"
+              )}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{counts.pendente}</span>
+              <span className="hidden sm:inline text-muted-foreground font-normal">pendente{counts.pendente !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300 text-sm font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{counts.aprovada}</span>
+              <span className="hidden sm:inline text-green-600 dark:text-green-500 font-normal">aprovada{counts.aprovada !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300 text-sm font-medium">
+              <XCircle className="w-3.5 h-3.5" />
+              <span>{counts.rejeitada}</span>
+              <span className="hidden sm:inline text-red-600 dark:text-red-500 font-normal">rejeitada{counts.rejeitada !== 1 ? "s" : ""}</span>
+            </div>
+          </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
-          <TabsList>
-            <TabsTrigger value="pendente" className="gap-2">
-              Pendentes
-              {counts.pendente > 0 && (
-                <Badge variant="destructive" className="ml-1">
-                  {counts.pendente}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="aprovada">Aprovadas ({counts.aprovada})</TabsTrigger>
-            <TabsTrigger value="rejeitada">Rejeitadas ({counts.rejeitada})</TabsTrigger>
-          </TabsList>
-
-          <div className="mt-4 space-y-3">
-            <div className="relative">
+        {/* Filters bar */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="search-query"
-                placeholder="Buscar por código da encomenda ou nome do destinatário"
+                placeholder="Buscar por código da encomenda ou nome do destinatário..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-              <div className="flex-1 min-w-[140px] space-y-1.5">
-                <Label htmlFor="block-filter" className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
-                  Bloco
-                </Label>
-                <Select
-                  value={selectedBlock || "__all__"}
-                  onValueChange={(v) => setSelectedBlock(v === "__all__" ? "" : v)}
-                >
-                  <SelectTrigger id="block-filter" className="w-full">
-                    <SelectValue placeholder="Todos os blocos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todos os blocos</SelectItem>
-                    {blockOptions.map((block) => (
-                      <SelectItem key={block} value={block}>
-                        {block}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 min-w-[140px] space-y-1.5">
-                <Label htmlFor="apartment-filter" className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Filter className="w-3.5 h-3.5" />
-                  Apartamento
-                </Label>
-                <Select
-                  value={selectedApartment || "__all__"}
-                  onValueChange={(v) => setSelectedApartment(v === "__all__" ? "" : v)}
-                >
-                  <SelectTrigger id="apartment-filter" className="w-full">
-                    <SelectValue placeholder="Todos os apartamentos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todos os apartamentos</SelectItem>
-                    {apartmentOptions.map((apt) => (
-                      <SelectItem key={apt} value={apt}>
-                        {apt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {(selectedBlock || selectedApartment || searchQuery) && (
+            <div className="flex gap-2">
+              <Select
+                value={selectedBlock || "__all__"}
+                onValueChange={(v) => setSelectedBlock(v === "__all__" ? "" : v)}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Bloco" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos os blocos</SelectItem>
+                  {blockOptions.map((block) => (
+                    <SelectItem key={block} value={block}>{block}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={selectedApartment || "__all__"}
+                onValueChange={(v) => setSelectedApartment(v === "__all__" ? "" : v)}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Apartamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {apartmentOptions.map((apt) => (
+                    <SelectItem key={apt} value={apt}>{apt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasActiveFilters && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => {
                     setSelectedBlock("");
                     setSelectedApartment("");
                     setSearchQuery("");
                   }}
-                  className="shrink-0"
+                  title="Limpar filtros"
                 >
-                  Limpar filtros
+                  <X className="w-4 h-4" />
                 </Button>
               )}
             </div>
           </div>
 
-          <TabsContent value={tab} className="mt-4 space-y-3">
-            {loading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Carregando...
-              </div>
-            ) : filtered.length === 0 ? (
-              <Card>
-                <CardContent className="py-10 text-center text-muted-foreground">
-                  Nenhuma solicitação {tab === "pendente" ? "pendente" : tab === "aprovada" ? "aprovada" : "rejeitada"}.
-                </CardContent>
-              </Card>
-            ) : (
-              filtered.map((req) => {
-                const packageInfo = getPackageDisplayInfo(req);
+          {/* Status tabs */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as Status)}>
+            <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex">
+              <TabsTrigger value="pendente" className="gap-1.5 relative">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Pendentes
+                {counts.pendente > 0 && (
+                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-yellow-500 text-white text-[10px] font-bold px-1">
+                    {counts.pendente}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="aprovada" className="gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Aprovadas
+                <span className="ml-1 text-xs text-muted-foreground">({counts.aprovada})</span>
+              </TabsTrigger>
+              <TabsTrigger value="rejeitada" className="gap-1.5">
+                <XCircle className="w-3.5 h-3.5" />
+                Rejeitadas
+                <span className="ml-1 text-xs text-muted-foreground">({counts.rejeitada})</span>
+              </TabsTrigger>
+            </TabsList>
 
-                return (
-                <Card key={req.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div className="space-y-0.5">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <PackageIcon className="w-4 h-4 text-primary" />
-                          <span className="font-mono">{packageInfo.pickupCode}</span>
-                          {packageInfo.location && (
-                            <span className="text-sm font-normal text-muted-foreground">
-                              {packageInfo.location}
-                            </span>
-                          )}
-                        </CardTitle>
-                        <p className="text-sm flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="text-muted-foreground">Destinatário:</span>
-                          <strong>{req.package?.resident?.full_name || "—"}</strong>
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          req.status === "pendente"
-                            ? "secondary"
-                            : req.status === "aprovada"
-                            ? "default"
-                            : "destructive"
-                        }
+            <TabsContent value={tab} className="mt-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : filtered.length === 0 ? (
+                <EmptyState tab={tab} hasFilters={hasActiveFilters} />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((req) => {
+                    const packageInfo = getPackageDisplayInfo(req);
+                    const cfg = STATUS_CONFIG[req.status];
+                    const isExpanded = expandedCard === req.id;
+                    const Photo = photoByRequestId[req.id];
+
+                    return (
+                      <Card
+                        key={req.id}
+                        className={cn(
+                          "overflow-hidden transition-all duration-200 hover:shadow-md",
+                          cfg.border
+                        )}
                       >
-                        {req.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {packageInfo.condominiumName && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Building2 className="w-4 h-4" />
-                        {packageInfo.condominiumName}
-                      </div>
-                    )}
+                        {/* Card Header */}
+                        <CardHeader className={cn("pb-3", cfg.bg)}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", cfg.iconBg)}>
+                                <PackageIcon className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-mono font-bold text-base leading-tight block truncate">
+                                  {packageInfo.pickupCode}
+                                </span>
+                                {packageInfo.location && (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                                    <Building2 className="w-3 h-3" />
+                                    {packageInfo.location}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Badge className={cn("shrink-0 text-xs font-semibold", cfg.badge)}>
+                              {req.status === "pendente" ? "Pendente" : req.status === "aprovada" ? "Aprovada" : "Rejeitada"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
 
-                    {req.package && (
-                      <div className="rounded-lg border bg-card p-3 flex flex-col sm:flex-row gap-3">
-                        <div className="sm:w-32 shrink-0">
-                          {photoByRequestId[req.id] ? (
+                        <CardContent className="space-y-3 pt-3">
+                          {/* Recipient info */}
+                          {req.package?.resident?.full_name && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">Destinatário:</span>
+                              <span className="font-medium truncate">{req.package.resident.full_name}</span>
+                            </div>
+                          )}
+
+                          {/* Condominium */}
+                          {packageInfo.condominiumName && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Building2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{packageInfo.condominiumName}</span>
+                            </div>
+                          )}
+
+                          {/* Package details preview */}
+                          {req.package && (
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs bg-muted/40 rounded-lg p-2.5">
+                              <div>
+                                <span className="text-muted-foreground">Tipo: </span>
+                                <span className="font-medium">{req.package.package_type?.name || "—"}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Rastreio: </span>
+                                <span className="font-mono font-medium">{req.package.tracking_code || "—"}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Recebida em: </span>
+                                <span className="font-medium">
+                                  {format(new Date(req.package.received_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Recebida por: </span>
+                                <span className="font-medium">{req.package.received_by_name || "—"}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reason */}
+                          <div className="rounded-lg border p-2.5 bg-muted/20">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                              Motivo da solicitação
+                            </p>
+                            <p className="text-sm leading-relaxed line-clamp-2">
+                              {req.reason}
+                            </p>
+                          </div>
+
+                          {/* Photo thumbnail */}
+                          {Photo && (
                             <button
                               type="button"
-                              onClick={() => setZoomedPhoto(photoByRequestId[req.id])}
-                              className="w-full h-28 sm:h-24 rounded-md border overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              aria-label={`Ampliar foto da encomenda ${packageInfo.pickupCode}`}
+                              onClick={() => setZoomedPhoto(Photo)}
+                              className="w-full h-24 rounded-lg border overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring relative group"
+                              aria-label={`Ver foto da encomenda ${packageInfo.pickupCode}`}
                             >
                               <img
-                                src={photoByRequestId[req.id]}
+                                src={Photo}
                                 alt={`Foto da encomenda ${packageInfo.pickupCode}`}
                                 loading="lazy"
-                                className="w-full h-full object-cover transition-transform hover:scale-105"
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
                               />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
                             </button>
-                          ) : (
-                            <div className="w-full h-28 sm:h-24 rounded-md border bg-muted/40 flex items-center justify-center">
-                              <ImageOff className="w-5 h-5 text-muted-foreground" />
+                          )}
+
+                          {/* Metadata */}
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3 h-3" />
+                              <span>
+                                {format(new Date(req.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                              </span>
+                            </div>
+                            <span>
+                              Solicitado por <strong>{nameByUserId[req.requested_by] || (req.requested_by_name && !req.requested_by_name.includes("@") ? req.requested_by_name : "Porteiro")}</strong>
+                            </span>
+                          </div>
+
+                          {/* Review info */}
+                          {req.status !== "pendente" && req.reviewed_by_name && (
+                            <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2">
+                              <p>
+                                Revisado por <strong>{req.reviewed_by_name}</strong>
+                                {req.reviewed_at &&
+                                  ` em ${format(new Date(req.reviewed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}`}
+                              </p>
+                              {req.review_notes && (
+                                <p className="italic mt-0.5 text-muted-foreground/80">
+                                  "{req.review_notes}"
+                                </p>
+                              )}
                             </div>
                           )}
-                        </div>
-                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Tipo: </span>
-                            <strong>{req.package.package_type?.name || "—"}</strong>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Rastreio: </span>
-                            <strong className="font-mono">{req.package.tracking_code || "—"}</strong>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Situação: </span>
-                            <strong>{req.package.status}</strong>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Recebida em: </span>
-                            <strong>
-                              {format(new Date(req.package.received_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                            </strong>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Recebida por: </span>
-                            <strong>{req.package.received_by_name || "—"}</strong>
-                          </div>
-                          {req.package.picked_up_at && (
-                            <div className="sm:col-span-2">
-                              <span className="text-muted-foreground">Retirada: </span>
-                              <strong>
-                                {format(new Date(req.package.picked_up_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                                {req.package.picked_up_by_name ? ` por ${req.package.picked_up_by_name}` : ""}
-                              </strong>
+
+                          {/* Action buttons */}
+                          {req.status === "pendente" && (
+                            <div className="flex gap-2 pt-1">
+                              <Button
+                                size="sm"
+                                onClick={() => setApproveTarget(req)}
+                                className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Aprovar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setRejectTarget(req)}
+                                className="flex-1 gap-1.5 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-950"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                Rejeitar
+                              </Button>
                             </div>
                           )}
-                          {req.package.description && (
-                            <div className="sm:col-span-2">
-                              <span className="text-muted-foreground">Observações: </span>
-                              <span className="whitespace-pre-wrap">{req.package.description}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="w-4 h-4" />
-                      Solicitado por: <strong>{nameByUserId[req.requested_by] || (req.requested_by_name && !req.requested_by_name.includes("@") ? req.requested_by_name : null) || "Porteiro"}</strong>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {format(new Date(req.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-muted/40 border">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                        Motivo
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">{req.reason}</p>
-                    </div>
-
-                    {req.status !== "pendente" && (
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        <p>
-                          Revisado por <strong>{req.reviewed_by_name || "—"}</strong>
-                          {req.reviewed_at &&
-                            ` em ${format(new Date(req.reviewed_at), "dd/MM/yyyy HH:mm", {
-                              locale: ptBR,
-                            })}`}
-                        </p>
-                        {req.review_notes && (
-                          <p className="italic">Observação: {req.review_notes}</p>
-                        )}
-                      </div>
-                    )}
-
-                    {req.status === "pendente" && (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          onClick={() => setApproveTarget(req)}
-                          className="gap-2"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          Aprovar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setRejectTarget(req)}
-                          className="gap-2"
-                        >
-                          <XCircle className="w-4 h-4" />
-                          Rejeitar
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                );
-              })
-            )}
-          </TabsContent>
-        </Tabs>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
 
       {/* Approve confirm */}
-      <AlertDialog
-        open={!!approveTarget}
-        onOpenChange={(o) => !o && setApproveTarget(null)}
-      >
+      <AlertDialog open={!!approveTarget} onOpenChange={(o) => !o && setApproveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aprovar exclusão?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Aprovar exclusão?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               A encomenda <strong>{approveTarget ? getPackageDisplayInfo(approveTarget).pickupCode : "—"}</strong> será
-              removida definitivamente da tabela de encomendas. A solicitação ficará
-              preservada para auditoria.
+              removida definitivamente. A solicitação ficará preservada para auditoria.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={processing}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleApprove} disabled={processing}>
+            <AlertDialogAction
+              onClick={handleApprove}
+              disabled={processing}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
               {processing ? "Processando..." : "Sim, aprovar"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -631,18 +699,18 @@ export default function PackageDeletions() {
       </AlertDialog>
 
       {/* Reject dialog */}
-      <Dialog
-        open={!!rejectTarget}
-        onOpenChange={(o) => {
-          if (!o) {
-            setRejectTarget(null);
-            setRejectNotes("");
-          }
-        }}
-      >
+      <Dialog open={!!rejectTarget} onOpenChange={(o) => {
+        if (!o) {
+          setRejectTarget(null);
+          setRejectNotes("");
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Rejeitar solicitação</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" />
+              Rejeitar solicitação
+            </DialogTitle>
             <DialogDescription>
               Adicione uma observação (opcional) explicando o motivo da rejeição.
             </DialogDescription>
@@ -655,8 +723,9 @@ export default function PackageDeletions() {
               onChange={(e) => setRejectNotes(e.target.value)}
               rows={4}
               maxLength={500}
-              placeholder="Ex.: encomenda ainda em uso..."
+              placeholder="Ex.: encomenda ainda em uso pela portaria..."
             />
+            <p className="text-xs text-muted-foreground text-right">{rejectNotes.length}/500</p>
           </div>
           <DialogFooter>
             <Button
@@ -681,10 +750,7 @@ export default function PackageDeletions() {
       </Dialog>
 
       {/* Zoom photo modal */}
-      <Dialog
-        open={!!zoomedPhoto}
-        onOpenChange={(o) => !o && setZoomedPhoto(null)}
-      >
+      <Dialog open={!!zoomedPhoto} onOpenChange={(o) => !o && setZoomedPhoto(null)}>
         <DialogContent className="max-w-3xl p-1 md:p-2">
           <DialogHeader className="sr-only">
             <DialogTitle>Visualização da foto</DialogTitle>
@@ -699,5 +765,42 @@ export default function PackageDeletions() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+  );
+}
+
+function EmptyState({
+  tab,
+  hasFilters,
+}: {
+  tab: Status;
+  hasFilters: boolean;
+}) {
+  const cfg = STATUS_CONFIG[tab];
+  const Icon = cfg.icon;
+
+  if (hasFilters) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-4", cfg.iconBg)}>
+          <Search className="w-6 h-6" />
+        </div>
+        <h3 className="font-semibold text-base text-foreground mb-1">
+          Nenhum resultado encontrado
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Tente ajustar os filtros ou buscar por outros termos.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-4", cfg.iconBg)}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <h3 className="font-semibold text-base text-foreground mb-1">{cfg.emptyTitle}</h3>
+      <p className="text-sm text-muted-foreground max-w-xs">{cfg.emptyDesc}</p>
+    </div>
   );
 }
