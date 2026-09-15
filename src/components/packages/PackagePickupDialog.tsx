@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { 
-  PackageCheck, 
-  Check, 
-  X, 
-  Loader2, 
+import {
+  PackageCheck,
+  Check,
+  X,
+  Loader2,
   AlertCircle,
   KeyRound,
+  ShieldCheck,
   Package as PackageIcon,
-  ArrowLeft
+  ArrowLeft,
 } from "lucide-react";
 import { getSignedPackagePhotoUrl } from "@/lib/packageStorage";
 import { PackageCardImage } from "./PackageCardImage";
@@ -24,13 +25,28 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Package } from "@/hooks/usePackages";
 
+/** Resultado da confirmação de retirada. */
+export interface PickupConfirmResult {
+  success: boolean;
+  error?: string;
+}
+
 interface PackagePickupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   package_: Package | null;
-  onConfirm: (pickedUpByName: string) => Promise<{ success: boolean; error?: string }>;
-  /** When false, the pickup code will not be rendered anywhere in the dialog. */
+  /**
+   * Confirma a retirada. O código digitado é repassado para que a validação
+   * possa acontecer no servidor (modo `serverValidation`).
+   */
+  onConfirm: (pickedUpByName: string, code: string) => Promise<PickupConfirmResult>;
+  /** Quando false, o código de retirada nunca é renderizado no diálogo. */
   revealPickupCode?: boolean;
+  /**
+   * Quando true, o código NÃO é comparado no cliente — a conferência é feita
+   * exclusivamente no servidor. Use sempre junto de `revealPickupCode={false}`.
+   */
+  serverValidation?: boolean;
 }
 
 type Step = "conference" | "validate" | "processing" | "success" | "error";
@@ -41,6 +57,7 @@ export function PackagePickupDialog({
   package_,
   onConfirm,
   revealPickupCode = true,
+  serverValidation = false,
 }: PackagePickupDialogProps) {
   const [step, setStep] = useState<Step>("conference");
   const [inputCode, setInputCode] = useState("");
@@ -77,15 +94,19 @@ export function PackagePickupDialog({
     }
   }, [open, package_?.photo_url]);
 
-  // Validate code as user types
+  // Validate code as user types (apenas quando a conferência é local)
   useEffect(() => {
+    if (serverValidation) {
+      setCodeValid(null);
+      return;
+    }
     if (!package_ || !inputCode) {
       setCodeValid(null);
       return;
     }
-    const isValid = inputCode.toUpperCase() === package_.pickup_code.toUpperCase();
+    const isValid = inputCode.toUpperCase() === (package_.pickup_code || "").toUpperCase();
     setCodeValid(isValid);
-  }, [inputCode, package_]);
+  }, [inputCode, package_, serverValidation]);
 
   // Focus input when entering validate step
   useEffect(() => {
@@ -94,15 +115,19 @@ export function PackagePickupDialog({
     }
   }, [step]);
 
+  // Em validação por servidor basta o código estar completo (6 dígitos).
+  const canSubmit = serverValidation
+    ? inputCode.length === 6 && pickedUpByName.trim().length > 0
+    : codeValid === true && pickedUpByName.trim().length > 0;
+
   const handleConfirm = async () => {
-    if (!codeValid || !pickedUpByName.trim()) return;
+    if (!canSubmit) return;
 
     setStep("processing");
-    const result = await onConfirm(pickedUpByName.trim());
+    const result = await onConfirm(pickedUpByName.trim(), inputCode.trim());
 
     if (result.success) {
       setStep("success");
-      // Auto close after success animation
       setTimeout(() => {
         onOpenChange(false);
       }, 2000);
@@ -119,6 +144,45 @@ export function PackagePickupDialog({
 
   if (!package_) return null;
 
+  const unitLabel = `${package_.block?.name ?? ""} - Apto ${package_.apartment?.number ?? ""}`;
+
+  /** Resumo visual reaproveitado nos passos de conferência e validação. */
+  const packagePreview = (
+    <div className="flex items-center gap-4 p-4 bg-muted rounded-lg w-full">
+      <div className="w-20 h-20 rounded-lg overflow-hidden bg-background shrink-0">
+        {isLoadingPhoto ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : signedPhotoUrl ? (
+          <PackageCardImage
+            src={signedPhotoUrl}
+            alt="Encomenda"
+            className="w-full h-full rounded-lg"
+            compact
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <PackageIcon className="w-6 h-6" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        {revealPickupCode && package_.pickup_code && (
+          <p className="font-mono font-bold text-xl text-primary tracking-wider">
+            {package_.pickup_code}
+          </p>
+        )}
+        <p className="text-sm font-medium">{unitLabel}</p>
+        {package_.description && (
+          <p className="text-xs text-muted-foreground truncate mt-1">
+            {package_.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -134,47 +198,12 @@ export function PackagePickupDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Package Preview */}
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg w-full">
-              <div className="w-20 h-20 rounded-lg overflow-hidden bg-background shrink-0">
-                {isLoadingPhoto ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : signedPhotoUrl ? (
-                  <PackageCardImage
-                    src={signedPhotoUrl}
-                    alt="Encomenda"
-                    className="w-full h-full rounded-lg"
-                    compact
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <PackageIcon className="w-6 h-6" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                {revealPickupCode && (
-                  <p className="font-mono font-bold text-xl text-primary tracking-wider">
-                    {package_.pickup_code}
-                  </p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  {package_.block?.name} - Apto {package_.apartment?.number}
-                </p>
-                {package_.description && (
-                  <p className="text-xs text-muted-foreground truncate mt-1">
-                    {package_.description}
-                  </p>
-                )}
-              </div>
-            </div>
+            {packagePreview}
 
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 w-full">
               <p className="text-sm text-amber-800 dark:text-amber-200 text-center">
                 <strong>Você conferiu</strong> se a encomenda está sendo entregue corretamente para o morador do{" "}
-                <strong>{package_.block?.name} - Apto {package_.apartment?.number}</strong>?
+                <strong>{unitLabel}</strong>?
               </p>
             </div>
 
@@ -183,17 +212,10 @@ export function PackagePickupDialog({
             </p>
 
             <div className="flex gap-3 w-full">
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={handleClose} className="flex-1">
                 Cancelar
               </Button>
-              <Button
-                onClick={() => setStep("validate")}
-                className="flex-1 gap-2"
-              >
+              <Button onClick={() => setStep("validate")} className="flex-1 gap-2">
                 <PackageCheck className="w-4 h-4" />
                 Sim, conferi e entregar
               </Button>
@@ -209,47 +231,12 @@ export function PackagePickupDialog({
                 Confirmar Retirada
               </DialogTitle>
               <DialogDescription>
-                Digite o código de retirada para confirmar
+                Peça ao morador o código recebido por WhatsApp e digite abaixo
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Package Preview */}
-              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-                <div className="w-20 h-20 rounded-lg overflow-hidden bg-background shrink-0">
-                  {isLoadingPhoto ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : signedPhotoUrl ? (
-                    <PackageCardImage
-                      src={signedPhotoUrl}
-                      alt="Encomenda"
-                      className="w-full h-full rounded-lg"
-                      compact
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <PackageIcon className="w-6 h-6" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {revealPickupCode && (
-                    <p className="font-mono font-bold text-xl text-primary tracking-wider">
-                      {package_.pickup_code}
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    {package_.block?.name} - Apto {package_.apartment?.number}
-                  </p>
-                  {package_.description && (
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {package_.description}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {packagePreview}
 
               {/* Picked Up By Name Input */}
               <div className="space-y-2">
@@ -280,8 +267,7 @@ export function PackagePickupDialog({
                     placeholder="000000"
                     value={inputCode}
                     onChange={(e) => {
-                      // Apenas números
-                      const numericValue = e.target.value.replace(/\D/g, '');
+                      const numericValue = e.target.value.replace(/\D/g, "");
                       setInputCode(numericValue);
                     }}
                     className={cn(
@@ -292,8 +278,9 @@ export function PackagePickupDialog({
                     maxLength={6}
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    autoComplete="off"
                   />
-                  {codeValid !== null && (
+                  {!serverValidation && codeValid !== null && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {codeValid ? (
                         <Check className="w-5 h-5 text-green-500" />
@@ -303,11 +290,19 @@ export function PackagePickupDialog({
                     </div>
                   )}
                 </div>
-                {codeValid === false && inputCode.length >= 4 && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    Código inválido
+                {serverValidation ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    O código é conferido com segurança no servidor.
                   </p>
+                ) : (
+                  codeValid === false &&
+                  inputCode.length >= 4 && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      Código inválido
+                    </p>
+                  )
                 )}
               </div>
 
@@ -321,11 +316,7 @@ export function PackagePickupDialog({
                   <ArrowLeft className="w-4 h-4" />
                   Voltar
                 </Button>
-                <Button
-                  onClick={handleConfirm}
-                  disabled={!codeValid || !pickedUpByName.trim()}
-                  className="flex-1 gap-2"
-                >
+                <Button onClick={handleConfirm} disabled={!canSubmit} className="flex-1 gap-2">
                   <PackageCheck className="w-4 h-4" />
                   Confirmar
                 </Button>
@@ -361,14 +352,12 @@ export function PackagePickupDialog({
               Encomenda baixada do sistema corretamente
             </p>
             <div className="mt-3 p-3 bg-muted rounded-lg text-center">
-              {revealPickupCode && (
+              {revealPickupCode && package_.pickup_code && (
                 <p className="font-mono font-bold text-lg text-primary">
                   {package_.pickup_code}
                 </p>
               )}
-              <p className="text-sm text-muted-foreground">
-                {package_.block?.name} - Apto {package_.apartment?.number}
-              </p>
+              <p className="text-sm text-muted-foreground">{unitLabel}</p>
             </div>
           </div>
         )}
@@ -383,13 +372,6 @@ export function PackagePickupDialog({
               {errorMessage}
             </p>
             <div className="flex flex-col gap-3 mt-6 w-full max-w-[280px]">
-              <Button
-                onClick={handleConfirm}
-                className="w-full gap-2"
-              >
-                <Loader2 className="w-4 h-4" />
-                Re-tentar baixa no banco
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => setStep("validate")}
