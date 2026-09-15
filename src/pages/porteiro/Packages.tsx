@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, MapPin, Bell } from "lucide-react";
+import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell } from "lucide-react";
 import SubscriptionGate from "@/components/sindico/SubscriptionGate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,6 @@ import { PackageStatus } from "@/lib/packageConstants";
 import { getSignedPackagePhotoUrl } from "@/lib/packageStorage";
 import { usePackageNotificationStatus } from "@/hooks/usePackageNotificationStatus";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 
 // Extended type for packages with signed URLs
 interface PackageWithSignedUrl extends PackageType {
@@ -255,8 +254,6 @@ export default function PorteiroPackages() {
         fetchPackages(matchedApartment.id, activeTab, 0, false),
         fetchPendingCount(matchedApartment.id),
       ]);
-
-
     } catch (error) {
       console.error("Search error:", error);
       setSearchError("Erro na busca");
@@ -272,14 +269,14 @@ export default function PorteiroPackages() {
     setPackages([]);
   };
 
-  const handlePackageClick = (pkg: PackageType) => {
+  const handlePackageClick = (pkg: PackageWithSignedUrl) => {
     if (pkg.status === "pendente") {
       setSelectedPackage(pkg);
       setIsPickupDialogOpen(true);
     }
   };
 
-  const handleViewDetails = (pkg: PackageType) => {
+  const handleViewDetails = (pkg: PackageWithSignedUrl) => {
     setDetailsPackage(pkg);
     setIsDetailsDialogOpen(true);
   };
@@ -312,8 +309,6 @@ export default function PorteiroPackages() {
         if (updateError) throw updateError;
       }
 
-      if (error) throw error;
-
       toast({
         title: "Encomenda retirada!",
         description: `Encomenda baixada do sistema corretamente. Retirada por ${pickedUpByName}.`,
@@ -327,7 +322,6 @@ export default function PorteiroPackages() {
           fetchPendingCount(selectedApartment.id),
         ]);
       }
-
 
       setSelectedPackage(null);
       return { success: true };
@@ -382,345 +376,372 @@ export default function PorteiroPackages() {
     fetchPackages(selectedApartment.id, activeTab, next, true);
   };
 
-
   return (
     <DashboardLayout>
       <SubscriptionGate>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Package className="w-6 h-6 text-primary" />
-              Encomendas
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Busque por unidade para gerenciar as encomendas
-            </p>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Package className="w-6 h-6 text-primary" />
+                Encomendas
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Busque por unidade para gerenciar as encomendas
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate("/porteiro/registrar")}
+              className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/25"
+            >
+              <PackagePlus className="w-4 h-4" />
+              Nova Encomenda
+            </Button>
           </div>
-          <Button
-            onClick={() => navigate("/porteiro/registrar")}
-            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/25"
-          >
-            <PackagePlus className="w-4 h-4" />
-            Nova Encomenda
-          </Button>
-        </div>
 
-        {/* Search Card */}
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="search-code" className="text-sm font-medium">
-                  Código da unidade
-                </Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="search-code"
-                      placeholder="Ex: 0344 (Bloco 03, Apto 44)"
-                      value={searchCode}
-                      onChange={(e) => setSearchCode(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                      className="pl-10 font-mono text-center tracking-widest"
-                      maxLength={6}
-                    />
-                  </div>
-                  <Button onClick={handleSearch} disabled={isSearching} className="gap-2">
-                    {isSearching ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4" />
-                    )}
-                    Buscar
-                  </Button>
-                  {selectedApartment && (
-                    <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground">
-                      <X className="w-4 h-4" />
-                      Limpar
+          {/* Search Card */}
+          <Card className="border-border/50 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="search-code" className="text-sm font-medium">
+                    Código da unidade
+                  </Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="search-code"
+                        placeholder="Ex: 0344 (Bloco 03, Apto 44)"
+                        value={searchCode}
+                        onChange={(e) => setSearchCode(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="pl-10 font-mono text-center tracking-widest"
+                        maxLength={6}
+                      />
+                    </div>
+                    <Button onClick={handleSearch} disabled={isSearching} className="gap-2">
+                      {isSearching ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Search className="w-4 h-4" />
+                      )}
+                      Buscar
                     </Button>
+                    {selectedApartment && (
+                      <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground">
+                        <X className="w-4 h-4" />
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                  {searchError && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <X className="w-3 h-3" />
+                      {searchError}
+                    </p>
                   )}
                 </div>
-                {searchError && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <X className="w-3 h-3" />
-                    {searchError}
-                  </p>
+
+                {/* Selected Apartment Info */}
+                {selectedApartment && (
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">
+                        {selectedApartment.blockName} - {selectedApartment.number}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedApartment.condominiumName}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="gap-1">
+                      <Package className="w-3 h-3" />
+                      {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
+                    </Badge>
+                  </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Selected Apartment Info */}
-              {selectedApartment && (
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-primary" />
+          {/* Tabs section */}
+          {selectedApartment && (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} defaultValue="pendente">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="pendente" className="gap-1.5">
+                  <Package className="w-3.5 h-3.5" />
+                  Pendentes
+                  {pendingCount > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 min-w-5 justify-center text-[10px]">
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="retirada" className="gap-1.5">
+                  <PackageCheck className="w-3.5 h-3.5" />
+                  Retiradas
+                </TabsTrigger>
+                <TabsTrigger value="all" className="gap-1.5">
+                  <Bell className="w-3.5 h-3.5" />
+                  Todas
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab: Pendentes */}
+              <TabsContent value="pendente" className="mt-0">
+                {loading ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="p-0 overflow-hidden">
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-5 w-24" />
+                          </div>
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                          <Skeleton className="h-9 w-full mt-2" />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">
-                      {selectedApartment.blockName} - {selectedApartment.number}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedApartment.condominiumName}
-                    </p>
+                ) : filteredPackages.length === 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                        <Package className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda pendente</h3>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Este apartamento não tem encomendas pendentes de retirada.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredPackages.map((pkg) => (
+                      <PackageCard
+                        key={pkg.id}
+                        id={pkg.id}
+                        photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
+                        pickupCode={pkg.pickup_code}
+                        status={pkg.status}
+                        apartmentNumber={pkg.apartment?.number || ""}
+                        blockName={pkg.block?.name || ""}
+                        condominiumName={pkg.condominium?.name}
+                        condominiumId={pkg.condominium_id || undefined}
+                        receivedAt={pkg.received_at}
+                        description={pkg.description || undefined}
+                        notificationStatus={notificationStatusMap[pkg.id]}
+                        notificationTimestamps={notificationDataMap[pkg.id]}
+                        onClick={() => handlePackageClick(pkg)}
+                        onViewDetails={() => handleViewDetails(pkg)}
+                        onResendNotification={() => handleResendNotification(pkg)}
+                        canRequestDeletion={false}
+                      />
+                    ))}
                   </div>
-                  <Badge variant="secondary" className="gap-1">
-                    <Package className="w-3 h-3" />
-                    {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
-                  </Badge>
+                )}
+              </TabsContent>
+
+              {/* Tab: Retiradas */}
+              <TabsContent value="retirada" className="mt-0">
+                {loading ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="p-0 overflow-hidden">
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-5 w-24" />
+                          </div>
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredPackages.length === 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                        <PackageCheck className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda retirada</h3>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Este apartamento ainda não teve encomendas retiradas.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {filteredPackages.map((pkg) => (
+                        <PackageCard
+                          key={pkg.id}
+                          id={pkg.id}
+                          photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
+                          pickupCode={pkg.pickup_code}
+                          status={pkg.status}
+                          apartmentNumber={pkg.apartment?.number || ""}
+                          blockName={pkg.block?.name || ""}
+                          condominiumName={pkg.condominium?.name}
+                          condominiumId={pkg.condominium_id || undefined}
+                          receivedAt={pkg.received_at}
+                          description={pkg.description || undefined}
+                          onClick={() => handleViewDetails(pkg)}
+                          onViewDetails={() => handleViewDetails(pkg)}
+                          canRequestDeletion={false}
+                        />
+                      ))}
+                    </div>
+                    {hasMore && filteredPackages.length > 0 && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={handleLoadMore}
+                          disabled={loadingMore}
+                          className="gap-2"
+                        >
+                          {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                          Carregar mais
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Tab: Todas */}
+              <TabsContent value="all" className="mt-0">
+                {loading ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="p-0 overflow-hidden">
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-5 w-24" />
+                          </div>
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredPackages.length === 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                        <Bell className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda registrada</h3>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Este apartamento ainda não recebeu nenhuma encomenda.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {filteredPackages.map((pkg) => (
+                        <PackageCard
+                          key={pkg.id}
+                          id={pkg.id}
+                          photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
+                          pickupCode={pkg.pickup_code}
+                          status={pkg.status}
+                          apartmentNumber={pkg.apartment?.number || ""}
+                          blockName={pkg.block?.name || ""}
+                          condominiumName={pkg.condominium?.name}
+                          condominiumId={pkg.condominium_id || undefined}
+                          receivedAt={pkg.received_at}
+                          description={pkg.description || undefined}
+                          notificationStatus={notificationStatusMap[pkg.id]}
+                          notificationTimestamps={notificationDataMap[pkg.id]}
+                          onClick={() => pkg.status === "pendente" ? handlePackageClick(pkg) : handleViewDetails(pkg)}
+                          onViewDetails={() => handleViewDetails(pkg)}
+                          onResendNotification={pkg.status === "pendente" ? () => handleResendNotification(pkg) : undefined}
+                          canRequestDeletion={false}
+                        />
+                      ))}
+                    </div>
+                    {hasMore && filteredPackages.length > 0 && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={handleLoadMore}
+                          disabled={loadingMore}
+                          className="gap-2"
+                        >
+                          {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                          Carregar mais
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+
+        {/* Pickup Dialog */}
+        <PackagePickupDialog
+          open={isPickupDialogOpen}
+          onOpenChange={setIsPickupDialogOpen}
+          package_={selectedPackage}
+          onConfirm={handleConfirmPickup}
+        />
+
+        {/* Details Dialog */}
+        <PackageDetailsDialog
+          open={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          package_={detailsPackage}
+        />
+
+        {/* Notification Modal */}
+        <Dialog open={isNotificationModalOpen} onOpenChange={setIsNotificationModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reenviar Notificação</DialogTitle>
+              <DialogDescription />
+            </DialogHeader>
+            <div className="py-4">
+              {notificationModalState === "loading" && (
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Enviando notificação...</p>
+                </div>
+              )}
+              {notificationModalState === "success" && (
+                <div className="flex flex-col items-center gap-3">
+                  <CheckCircle2 className="w-12 h-12 text-green-500" />
+                  <p className="font-semibold">Notificação enviada!</p>
+                  <p className="text-sm text-muted-foreground">
+                    {notificationSuccessCount} notificação(ões) reenviada(s) com sucesso.
+                  </p>
+                </div>
+              )}
+              {notificationModalState === "error" && (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+                    <X className="w-6 h-6 text-destructive" />
+                  </div>
+                  <p className="font-semibold text-destructive">Erro ao enviar</p>
+                  <p className="text-sm text-muted-foreground text-center">
+                    {notificationErrorMessage}
+                  </p>
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs section - TabsContent MUST be inside Tabs */}
-        {selectedApartment && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="pendente" className="gap-1.5">
-                <Package className="w-3.5 h-3.5" />
-                Pendentes
-                {pendingCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 min-w-5 justify-center text-[10px]">
-                    {pendingCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="retirada" className="gap-1.5">
-                <PackageCheck className="w-3.5 h-3.5" />
-                Retiradas
-              </TabsTrigger>
-              <TabsTrigger value="all" className="gap-1.5">
-                <Bell className="w-3.5 h-3.5" />
-                Todas
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Tab: Pendentes */}
-            <TabsContent value="pendente" className="mt-0">
-              {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {[1, 2, 3].map((i) => (
-                    <Card key={i} className="p-0 overflow-hidden">
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-20" />
-                          <Skeleton className="h-5 w-24" />
-                        </div>
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-2/3" />
-                        <Skeleton className="h-9 w-full mt-2" />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredPackages.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                      <Package className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda pendente</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs">
-                      Este apartamento não tem encomendas pendentes de retirada.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredPackages.map((pkg) => (
-                    <PackageCard
-                      key={pkg.id}
-                      pkg={pkg}
-                      onClick={() => handlePackageClick(pkg)}
-                      onViewDetails={() => handleViewDetails(pkg)}
-                      notificationStatus={notificationStatusMap[pkg.id]}
-                      notificationData={notificationDataMap[pkg.id]}
-                      onResendNotification={() => handleResendNotification(pkg)}
-                      showNotificationButton
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Tab: Retiradas */}
-            <TabsContent value="retirada" className="mt-0">
-              {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {[1, 2, 3].map((i) => (
-                    <Card key={i} className="p-0 overflow-hidden">
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-20" />
-                          <Skeleton className="h-5 w-24" />
-                        </div>
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-2/3" />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredPackages.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                      <PackageCheck className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda retirada</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs">
-                      Este apartamento ainda não teve encomendas retiradas.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredPackages.map((pkg) => (
-                      <PackageCard
-                        key={pkg.id}
-                        pkg={pkg}
-                        onClick={() => handleViewDetails(pkg)}
-                        onViewDetails={() => handleViewDetails(pkg)}
-                      />
-                    ))}
-                  </div>
-                  {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
-                    <div className="flex justify-center mt-6">
-                      <Button
-                        variant="outline"
-                        onClick={handleLoadMore}
-                        disabled={loadingMore}
-                        className="gap-2"
-                      >
-                        {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                        Carregar mais
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </TabsContent>
-
-            {/* Tab: Todas */}
-            <TabsContent value="all" className="mt-0">
-              {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {[1, 2, 3].map((i) => (
-                    <Card key={i} className="p-0 overflow-hidden">
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-20" />
-                          <Skeleton className="h-5 w-24" />
-                        </div>
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-2/3" />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredPackages.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                      <Bell className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda registrada</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs">
-                      Este apartamento ainda não recebeu nenhuma encomenda.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredPackages.map((pkg) => (
-                      <PackageCard
-                        key={pkg.id}
-                        pkg={pkg}
-                        onClick={() => pkg.status === "pendente" ? handlePackageClick(pkg) : handleViewDetails(pkg)}
-                        onViewDetails={() => handleViewDetails(pkg)}
-                        notificationStatus={notificationStatusMap[pkg.id]}
-                        notificationData={notificationDataMap[pkg.id]}
-                        onResendNotification={() => handleResendNotification(pkg)}
-                        showNotificationButton={pkg.status === "pendente"}
-                      />
-                    ))}
-                  </div>
-                  {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
-                    <div className="flex justify-center mt-6">
-                      <Button
-                        variant="outline"
-                        onClick={handleLoadMore}
-                        disabled={loadingMore}
-                        className="gap-2"
-                      >
-                        {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                        Carregar mais
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
-
-      {/* Pickup Dialog */}
-      <PackagePickupDialog
-        isOpen={isPickupDialogOpen}
-        onClose={() => setIsPickupDialogOpen(false)}
-        onConfirm={handleConfirmPickup}
-        package={selectedPackage}
-      />
-
-      {/* Details Dialog */}
-      <PackageDetailsDialog
-        isOpen={isDetailsDialogOpen}
-        onClose={() => setIsDetailsDialogOpen(false)}
-        package={detailsPackage}
-      />
-
-      {/* Notification Modal */}
-      <Dialog open={isNotificationModalOpen} onOpenChange={setIsNotificationModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reenviar Notificação</DialogTitle>
-            <DialogDescription />
-          </DialogHeader>
-          <div className="py-4">
-            {notificationModalState === "loading" && (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Enviando notificação...</p>
-              </div>
-            )}
-            {notificationModalState === "success" && (
-              <div className="flex flex-col items-center gap-3">
-                <CheckCircle2 className="w-12 h-12 text-green-500" />
-                <p className="font-semibold">Notificação enviada!</p>
-                <p className="text-sm text-muted-foreground">
-                  {notificationSuccessCount} notificação(ões) reenviada(s) com sucesso.
-                </p>
-              </div>
-            )}
-            {notificationModalState === "error" && (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
-                  <X className="w-6 h-6 text-destructive" />
-                </div>
-                <p className="font-semibold text-destructive">Erro ao enviar</p>
-                <p className="text-sm text-muted-foreground text-center">
-                  {notificationErrorMessage}
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
       </SubscriptionGate>
     </DashboardLayout>
   );
