@@ -3113,6 +3113,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      confirm_package_pickup_secure: {
+        Args: {
+          p_code: string
+          p_package_id: string
+          p_picked_up_by: string
+          p_picked_up_by_name: string
+        }
+        Returns: Json
+      }
       get_apartment_condominium_id: {
         Args: { _apartment_id: string }
         Returns: string
