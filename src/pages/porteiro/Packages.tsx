@@ -600,7 +600,7 @@ export default function PorteiroPackages() {
                         receivedAt={pkg.received_at}
                         description={pkg.description || undefined}
                         notificationStatus={notificationStatusMap[pkg.id]}
-                        notificationTimestamps={notificationDataMap[pkg.id]}
+                        notificationTimestamps={notificationDataMap[pkg.id]?.timestamps}
                         onClick={() => handlePackageClick(pkg)}
                         onViewDetails={() => handleViewDetails(pkg)}
                         onResendNotification={() => handleResendNotification(pkg)}
@@ -699,7 +699,7 @@ export default function PorteiroPackages() {
                           receivedAt={pkg.received_at}
                           description={pkg.description || undefined}
                           notificationStatus={notificationStatusMap[pkg.id]}
-                          notificationTimestamps={notificationDataMap[pkg.id]}
+                          notificationTimestamps={notificationDataMap[pkg.id]?.timestamps}
                           onClick={() => pkg.status === "pendente" ? handlePackageClick(pkg) : handleViewDetails(pkg)}
                           onViewDetails={() => handleViewDetails(pkg)}
                           onResendNotification={pkg.status === "pendente" ? () => handleResendNotification(pkg) : undefined}
