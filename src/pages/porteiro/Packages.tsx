@@ -605,6 +605,7 @@ export default function PorteiroPackages() {
                         onViewDetails={() => handleViewDetails(pkg)}
                         onResendNotification={() => handleResendNotification(pkg)}
                         canRequestDeletion={false}
+                        showPickupCode={false}
                       />
                     ))}
                   </div>
@@ -646,6 +647,7 @@ export default function PorteiroPackages() {
                           onClick={() => handleViewDetails(pkg)}
                           onViewDetails={() => handleViewDetails(pkg)}
                           canRequestDeletion={false}
+                          showPickupCode={false}
                         />
                       ))}
                     </div>
@@ -704,6 +706,7 @@ export default function PorteiroPackages() {
                           onViewDetails={() => handleViewDetails(pkg)}
                           onResendNotification={pkg.status === "pendente" ? () => handleResendNotification(pkg) : undefined}
                           canRequestDeletion={false}
+                          showPickupCode={false}
                         />
                       ))}
                     </div>
