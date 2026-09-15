@@ -41,13 +41,13 @@ export default function PorteiroPackages() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [condominiumIds, setCondominiumIds] = useState<string[]>([]);
   const [searchCode, setSearchCode] = useState("");
   const [searchError, setSearchError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<ApartmentInfo | null>(null);
-  
+
   const PAGE_SIZE = 3;
   const [packages, setPackages] = useState<PackageWithSignedUrl[]>([]);
   const [loading, setLoading] = useState(false);
@@ -206,7 +206,7 @@ export default function PorteiroPackages() {
       const matchedBlock = blocksData?.find((block) => {
         const blockName = block.name.toLowerCase();
         const numericPart = blockName.replace(/\D/g, "");
-        return numericPart === blockCode || 
+        return numericPart === blockCode ||
                numericPart.padStart(2, "0") === blockCode ||
                blockCode === numericPart.padStart(2, "0");
       });
@@ -228,7 +228,7 @@ export default function PorteiroPackages() {
       // Find apartment that matches
       const matchedApartment = apartmentsData?.find((apt) => {
         const aptNumber = apt.number.replace(/\D/g, "");
-        return aptNumber === apartmentCode || 
+        return aptNumber === apartmentCode ||
                aptNumber.padStart(2, "0") === apartmentCode.padStart(2, "0");
       });
 
@@ -256,7 +256,7 @@ export default function PorteiroPackages() {
         fetchPendingCount(matchedApartment.id),
       ]);
 
-      
+
     } catch (error) {
       console.error("Search error:", error);
       setSearchError("Erro na busca");
@@ -308,7 +308,7 @@ export default function PorteiroPackages() {
             picked_up_by_name: pickedUpByName,
           })
           .eq("id", selectedPackage.id);
-        
+
         if (updateError) throw updateError;
       }
 
@@ -398,8 +398,8 @@ export default function PorteiroPackages() {
               Busque por unidade para gerenciar as encomendas
             </p>
           </div>
-          <Button 
-            onClick={() => navigate("/porteiro/registrar")} 
+          <Button
+            onClick={() => navigate("/porteiro/registrar")}
             className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/25"
           >
             <PackagePlus className="w-4 h-4" />
@@ -411,337 +411,317 @@ export default function PorteiroPackages() {
         <Card className="border-border/50 shadow-sm">
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Search className="w-4 h-4 text-primary" />
-                Buscar Unidade
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground text-sm hidden sm:inline">Bloco + Apto</span>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="search-code" className="text-sm font-medium">
+                  Código da unidade
+                </Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="search-code"
+                      placeholder="Ex: 0344 (Bloco 03, Apto 44)"
+                      value={searchCode}
+                      onChange={(e) => setSearchCode(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      className="pl-10 font-mono text-center tracking-widest"
+                      maxLength={6}
+                    />
                   </div>
-                  <Input
-                    placeholder="Ex: 0344"
-                    value={searchCode}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                      setSearchCode(val);
-                      setSearchError("");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleSearch();
-                      }
-                    }}
-                    disabled={isSearching}
-                    className={cn(
-                      "pl-10 sm:pl-28 h-12 text-base font-mono tracking-wider",
-                      searchError ? "border-destructive ring-1 ring-destructive/20" : "focus:ring-2 focus:ring-primary/20"
+                  <Button onClick={handleSearch} disabled={isSearching} className="gap-2">
+                    {isSearching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
                     )}
-                    maxLength={6}
-                  />
-                  {searchCode && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
-                      onClick={clearSearch}
-                    >
+                    Buscar
+                  </Button>
+                  {selectedApartment && (
+                    <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground">
                       <X className="w-4 h-4" />
+                      Limpar
                     </Button>
                   )}
                 </div>
-                <Button
-                  onClick={handleSearch}
-                  disabled={isSearching || !searchCode}
-                  className="h-12 px-6 gap-2"
-                >
-                  {isSearching ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">Buscar</span>
-                </Button>
+                {searchError && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <X className="w-3 h-3" />
+                    {searchError}
+                  </p>
+                )}
               </div>
-              
-              {searchError && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-destructive" />
-                  {searchError}
-                </p>
+
+              {/* Selected Apartment Info */}
+              {selectedApartment && (
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">
+                      {selectedApartment.blockName} - {selectedApartment.number}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedApartment.condominiumName}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="gap-1">
+                    <Package className="w-3 h-3" />
+                    {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Selected Apartment Display */}
+        {/* Tabs section - TabsContent MUST be inside Tabs */}
         {selectedApartment && (
-          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-md">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-lg uppercase">
-                        {selectedApartment.blockName} - APTO {selectedApartment.number}
-                      </h3>
-                      <Badge variant="secondary" className="text-xs">
-                        {selectedApartment.condominiumName}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {pendingCount > 0 ? `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}` : 'Nenhuma pendente'}
-                    </p>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearSearch}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Trocar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="pendente" className="gap-1.5">
+                <Package className="w-3.5 h-3.5" />
+                Pendentes
+                {pendingCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 min-w-5 justify-center text-[10px]">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="retirada" className="gap-1.5">
+                <PackageCheck className="w-3.5 h-3.5" />
+                Retiradas
+              </TabsTrigger>
+              <TabsTrigger value="all" className="gap-1.5">
+                <Bell className="w-3.5 h-3.5" />
+                Todas
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Packages List - Only shown when apartment is selected */}
-        {selectedApartment && (
-          <>
-            {/* Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-                <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 rounded-lg">
-                  <TabsTrigger 
-                    value="pendente" 
-                    className={cn(
-                      "gap-2 py-2.5 px-4 rounded-md transition-all",
-                      activeTab === "pendente" && "bg-background shadow-sm"
-                    )}
-                  >
-                    <Package className="w-4 h-4" />
-                    <span className="hidden sm:inline">Pendentes</span>
-                    {pendingCount > 0 && (
-                      <Badge 
-                        variant="default" 
-                        className="ml-1 px-1.5 py-0.5 text-xs bg-yellow-500 hover:bg-yellow-600"
-                      >
-                        {pendingCount}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="retirada" 
-                    className={cn(
-                      "gap-2 py-2.5 px-4 rounded-md transition-all",
-                      activeTab === "retirada" && "bg-background shadow-sm"
-                    )}
-                  >
-                    <PackageCheck className="w-4 h-4" />
-                    <span className="hidden sm:inline">Retiradas</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="all"
-                    className={cn(
-                      "py-2.5 px-4 rounded-md transition-all",
-                      activeTab === "all" && "bg-background shadow-sm"
-                    )}
-                  >
-                    Todas
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-
-            <TabsContent value={activeTab} className="mt-0">
+            {/* Tab: Pendentes */}
+            <TabsContent value="pendente" className="mt-0">
               {loading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-72 rounded-xl" />
+                    <Card key={i} className="p-0 overflow-hidden">
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-24" />
+                        </div>
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
+                        <Skeleton className="h-9 w-full mt-2" />
+                      </div>
+                    </Card>
                   ))}
                 </div>
               ) : filteredPackages.length === 0 ? (
                 <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                      {activeTab === "pendente" ? (
-                        <Package className="w-8 h-8 text-muted-foreground" />
-                      ) : activeTab === "retirada" ? (
-                        <PackageCheck className="w-8 h-8 text-muted-foreground" />
-                      ) : (
-                        <Package className="w-8 h-8 text-muted-foreground" />
-                      )}
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Package className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-medium mb-2">
-                      {activeTab === "pendente"
-                        ? "Nenhuma encomenda pendente"
-                        : activeTab === "retirada"
-                        ? "Nenhuma encomenda retirada"
-                        : "Nenhuma encomenda"}
-                    </h3>
-                    <p className="text-muted-foreground text-center max-w-sm">
-                      {activeTab === "pendente"
-                        ? "Todas as encomendas foram retiradas pelos moradores."
-                        : activeTab === "retirada"
-                        ? "Ainda não há encomendas retiradas nesta unidade."
-                        : "Não há encomendas registradas para esta unidade."}
+                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda pendente</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Este apartamento não tem encomendas pendentes de retirada.
                     </p>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredPackages.map((pkg) => (
                     <PackageCard
                       key={pkg.id}
-                      id={pkg.id}
-                      photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
-                      pickupCode={pkg.pickup_code}
-                      status={pkg.status}
-                      apartmentNumber={pkg.apartment?.number || ""}
-                      blockName={pkg.block?.name || ""}
-                      condominiumName={pkg.condominium?.name}
-                      condominiumId={pkg.condominium_id}
-                      receivedAt={pkg.received_at}
-                      description={pkg.description || undefined}
+                      pkg={pkg}
                       onClick={() => handlePackageClick(pkg)}
                       onViewDetails={() => handleViewDetails(pkg)}
+                      notificationStatus={notificationStatusMap[pkg.id]}
+                      notificationData={notificationDataMap[pkg.id]}
                       onResendNotification={() => handleResendNotification(pkg)}
-                      onRequestDeletion={() => selectedApartment && fetchPackages(selectedApartment.id, activeTab, 0, false)}
-                      showCondominium={false}
-                      showPickupCode={false}
-                      canRequestDeletion
-                      notificationStatus={notificationStatusMap[pkg.id] || null}
-                      notificationTimestamps={notificationDataMap[pkg.id]?.timestamps}
+                      showNotificationButton
                     />
                   ))}
                 </div>
               )}
-              {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
-                <div className="flex justify-center mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="gap-2"
-                  >
-                    {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Carregar mais
-                  </Button>
+            </TabsContent>
+
+            {/* Tab: Retiradas */}
+            <TabsContent value="retirada" className="mt-0">
+              {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="p-0 overflow-hidden">
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-24" />
+                        </div>
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                    </Card>
+                  ))}
                 </div>
+              ) : filteredPackages.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <PackageCheck className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda retirada</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Este apartamento ainda não teve encomendas retiradas.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredPackages.map((pkg) => (
+                      <PackageCard
+                        key={pkg.id}
+                        pkg={pkg}
+                        onClick={() => handleViewDetails(pkg)}
+                        onViewDetails={() => handleViewDetails(pkg)}
+                      />
+                    ))}
+                  </div>
+                  {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="gap-2"
+                      >
+                        {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Carregar mais
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
-          </>
-        )}
 
-        {/* Initial State - No apartment selected */}
-        {!selectedApartment && !isSearching && (
-          <Card className="border-dashed bg-gradient-to-b from-muted/50 to-muted/20">
-            <CardContent className="flex flex-col items-center justify-center py-16">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                <Search className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">
-                Busque uma unidade
-              </h3>
-              <p className="text-muted-foreground text-center max-w-md mb-6">
-                Digite o código da unidade no formato BBAA<br />
-                <span className="text-sm">(ex: 0344 para Bloco 03, Apto 44)</span>
-              </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
-                  <MapPin className="w-4 h-4" />
-                  <span className="font-mono">BB</span>
-                  <span className="text-xs">= Bloco</span>
+            {/* Tab: Todas */}
+            <TabsContent value="all" className="mt-0">
+              {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="p-0 overflow-hidden">
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-24" />
+                        </div>
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
-                  <Building2 className="w-4 h-4" />
-                  <span className="font-mono">AA</span>
-                  <span className="text-xs">= Apto</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ) : filteredPackages.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Bell className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda registrada</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Este apartamento ainda não recebeu nenhuma encomenda.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredPackages.map((pkg) => (
+                      <PackageCard
+                        key={pkg.id}
+                        pkg={pkg}
+                        onClick={() => pkg.status === "pendente" ? handlePackageClick(pkg) : handleViewDetails(pkg)}
+                        onViewDetails={() => handleViewDetails(pkg)}
+                        notificationStatus={notificationStatusMap[pkg.id]}
+                        notificationData={notificationDataMap[pkg.id]}
+                        onResendNotification={() => handleResendNotification(pkg)}
+                        showNotificationButton={pkg.status === "pendente"}
+                      />
+                    ))}
+                  </div>
+                  {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="gap-2"
+                      >
+                        {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Carregar mais
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
-      </SubscriptionGate>
 
-      {/* Pickup Confirmation Dialog */}
+      {/* Pickup Dialog */}
       <PackagePickupDialog
-        open={isPickupDialogOpen}
-        onOpenChange={setIsPickupDialogOpen}
-        package_={selectedPackage}
+        isOpen={isPickupDialogOpen}
+        onClose={() => setIsPickupDialogOpen(false)}
         onConfirm={handleConfirmPickup}
-        revealPickupCode={false}
+        package={selectedPackage}
       />
 
-      {/* Package Details Dialog */}
+      {/* Details Dialog */}
       <PackageDetailsDialog
-        open={isDetailsDialogOpen}
-        onOpenChange={setIsDetailsDialogOpen}
-        package_={detailsPackage}
-        showPickupCode={false}
+        isOpen={isDetailsDialogOpen}
+        onClose={() => setIsDetailsDialogOpen(false)}
+        package={detailsPackage}
       />
 
-      {/* Notification Success Modal */}
       {/* Notification Modal */}
       <Dialog open={isNotificationModalOpen} onOpenChange={setIsNotificationModalOpen}>
-        <DialogContent className="sm:max-w-sm text-center">
+        <DialogContent>
           <DialogHeader>
-            <div className="flex justify-center mb-2">
-              {notificationModalState === "loading" && (
-                <div className="rounded-full bg-muted p-4">
-                  <Loader2 className="w-10 h-10 text-muted-foreground animate-spin" />
-                </div>
-              )}
-              {notificationModalState === "success" && (
-                <div className="rounded-full bg-primary/10 p-4">
-                  <Bell className="w-10 h-10 text-primary" />
-                </div>
-              )}
-              {notificationModalState === "error" && (
-                <div className="rounded-full bg-destructive/10 p-4">
-                  <X className="w-10 h-10 text-destructive" />
-                </div>
-              )}
-            </div>
-            <DialogTitle className="text-center text-lg">
-              {notificationModalState === "loading" && "Enviando notificação..."}
-              {notificationModalState === "success" && "Notificação enviada!"}
-              {notificationModalState === "error" && "Falha ao enviar"}
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              {notificationModalState === "loading" && "Aguarde, estamos enviando a notificação via WhatsApp."}
-              {notificationModalState === "success" && (
-                notificationSuccessCount > 0
-                  ? `${notificationSuccessCount} morador(es) notificado(s) via WhatsApp com sucesso.`
-                  : "O morador foi notificado via WhatsApp com sucesso."
-              )}
-              {notificationModalState === "error" && notificationErrorMessage}
-            </DialogDescription>
+            <DialogTitle>Reenviar Notificação</DialogTitle>
+            <DialogDescription />
           </DialogHeader>
-          {notificationModalState !== "loading" && (
-            <Button
-              className="w-full mt-2"
-              variant={notificationModalState === "error" ? "destructive" : "default"}
-              onClick={() => setIsNotificationModalOpen(false)}
-            >
-              OK
-            </Button>
-          )}
+          <div className="py-4">
+            {notificationModalState === "loading" && (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Enviando notificação...</p>
+              </div>
+            )}
+            {notificationModalState === "success" && (
+              <div className="flex flex-col items-center gap-3">
+                <CheckCircle2 className="w-12 h-12 text-green-500" />
+                <p className="font-semibold">Notificação enviada!</p>
+                <p className="text-sm text-muted-foreground">
+                  {notificationSuccessCount} notificação(ões) reenviada(s) com sucesso.
+                </p>
+              </div>
+            )}
+            {notificationModalState === "error" && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+                  <X className="w-6 h-6 text-destructive" />
+                </div>
+                <p className="font-semibold text-destructive">Erro ao enviar</p>
+                <p className="text-sm text-muted-foreground text-center">
+                  {notificationErrorMessage}
+                </p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+      </SubscriptionGate>
     </DashboardLayout>
   );
 }
