@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Package, Clock, Building2, MoreVertical, Info, RefreshCw, Trash2 } from "lucide-react";
+import { Package, Clock, Building2, MoreVertical, Info, RefreshCw, Trash2, CheckCircle2 } from "lucide-react";
 import { PackageDeleteRequestDialog } from "./PackageDeleteRequestDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,19 @@ interface PackageCardProps {
   canRequestDeletion?: boolean;
 }
 
+const STATUS_STYLES: Record<PackageStatus, { banner: string; icon: string; label: string }> = {
+  pendente: {
+    banner: "from-amber-500 to-orange-500",
+    icon: "text-white",
+    label: "Aguardando retirada",
+  },
+  retirada: {
+    banner: "from-emerald-500 to-teal-500",
+    icon: "text-white",
+    label: "Retirada confirmada",
+  },
+};
+
 export function PackageCard({
   id,
   photoUrl,
@@ -76,6 +89,7 @@ export function PackageCard({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const canResend = Boolean(onResendNotification);
   const canDelete = canRequestDeletion && Boolean(condominiumId) && status !== "retirada";
+  const style = STATUS_STYLES[status];
 
   const formattedDate = format(new Date(receivedAt), "dd/MM/yyyy 'às' HH:mm", {
     locale: ptBR,
@@ -85,39 +99,6 @@ export function PackageCard({
     setConfirmOpen(false);
     onResendNotification?.();
   };
-
-  const ResendButton = ({ className }: { className?: string }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      className={cn("w-full gap-2 text-xs", className)}
-      onClick={(e) => {
-        e.stopPropagation();
-        setConfirmOpen(true);
-      }}
-    >
-      <RefreshCw className="h-3.5 w-3.5" />
-      Reenviar notificação WhatsApp
-    </Button>
-  );
-
-  const DeleteButton = ({ className }: { className?: string }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      className={cn(
-        "w-full gap-2 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive",
-        className,
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        setDeleteOpen(true);
-      }}
-    >
-      <Trash2 className="h-3.5 w-3.5" />
-      Solicitar exclusão
-    </Button>
-  );
 
   if (compact) {
     return (
@@ -157,8 +138,34 @@ export function PackageCard({
               </div>
             </CardContent>
           </Card>
-          {canResend && <ResendButton />}
-          {canDelete && <DeleteButton />}
+          {canResend && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmOpen(true);
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reenviar notificação
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteOpen(true);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Solicitar exclusão
+            </Button>
+          )}
         </div>
 
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -191,21 +198,41 @@ export function PackageCard({
         <Card
           className={cn(
             "overflow-hidden transition-all hover:shadow-lg group",
+            "border-0 shadow-md",
             onClick && "cursor-pointer"
           )}
           onClick={onClick}
         >
-          <div className="relative overflow-hidden bg-muted">
-            <PackageCardImage src={photoUrl} />
-            <div className="absolute top-3 right-3 flex items-center gap-2">
-              <PackageStatusBadge status={status} />
+          {showPickupCode && (
+            <div className={cn("bg-gradient-to-r px-4 py-2.5", style.banner)}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className={cn("w-5 h-5", style.icon)} />
+                  <span className="font-mono font-bold text-lg text-white tracking-wider">
+                    {pickupCode}
+                  </span>
+                </div>
+                <span className="text-xs text-white/90 font-medium flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {style.label}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="relative bg-gradient-to-br from-muted to-muted/50">
+            <div className="aspect-[4/3] relative">
+              <PackageCardImage src={photoUrl} />
+              <div className="absolute top-3 left-3">
+                <PackageStatusBadge status={status} />
+              </div>
               {(onViewDetails || canDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-3 right-3 h-8 w-8 shadow-lg"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
@@ -231,44 +258,78 @@ export function PackageCard({
               )}
             </div>
           </div>
-          <CardContent className="p-4 space-y-3">
-            {showPickupCode && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg">
-                  <Package className="w-4 h-4 text-primary" />
-                  <span className="font-mono font-bold text-lg text-primary tracking-widest">
-                    {pickupCode}
-                  </span>
-                </div>
-              </div>
-            )}
 
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Building2 className="w-4 h-4" />
-                <span className="uppercase">
-                  {blockName} - {apartmentNumber}
-                </span>
-                {showCondominium && condominiumName && <span> • {condominiumName}</span>}
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Building2 className="w-4.5 h-4.5 text-primary" />
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                <span>{formattedDate}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm uppercase text-foreground">
+                  {blockName} - Apto {apartmentNumber}
+                </p>
+                {showCondominium && condominiumName && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {condominiumName}
+                  </p>
+                )}
               </div>
-              {notificationStatus && (
-                <DeliveryStatusTracker status={notificationStatus} timestamps={notificationTimestamps} className="mt-1" />
-              )}
             </div>
 
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span>{formattedDate}</span>
+            </div>
+
+            {notificationStatus && (
+              <DeliveryStatusTracker
+                status={notificationStatus}
+                timestamps={notificationTimestamps}
+                className="mt-1"
+              />
+            )}
+
             {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
+              <p className="text-sm text-muted-foreground line-clamp-2 pt-1 border-t">
                 {description}
               </p>
             )}
+
+            {canResend && status === "pendente" && (
+              <div className="pt-2 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmOpen(true);
+                  }}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reenviar notificação WhatsApp
+                </Button>
+              </div>
+            )}
+
+            {canDelete && (
+              <div className="pt-2 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Solicitar exclusão
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
-        {canResend && <ResendButton />}
-        {canDelete && <DeleteButton />}
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
