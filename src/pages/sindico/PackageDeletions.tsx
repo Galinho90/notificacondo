@@ -496,7 +496,7 @@ export default function PackageDeletions() {
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : filtered.length === 0 ? (
-                <EmptyState tab={tab} hasFilters={hasActiveFilters} />
+                <EmptyState tab={tab} hasFilters={Boolean(hasActiveFilters)} />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {filtered.map((req) => {
