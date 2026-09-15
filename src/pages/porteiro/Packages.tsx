@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2 } from "lucide-react";
+import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, MapPin, Bell } from "lucide-react";
 import SubscriptionGate from "@/components/sindico/SubscriptionGate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { PackageCard } from "@/components/packages/PackageCard";
 import { PackagePickupDialog } from "@/components/packages/PackagePickupDialog";
 import { PackageDetailsDialog } from "@/components/packages/PackageDetailsDialog";
@@ -20,6 +21,7 @@ import { PackageStatus } from "@/lib/packageConstants";
 import { getSignedPackagePhotoUrl } from "@/lib/packageStorage";
 import { usePackageNotificationStatus } from "@/hooks/usePackageNotificationStatus";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 // Extended type for packages with signed URLs
 interface PackageWithSignedUrl extends PackageType {
@@ -386,209 +388,289 @@ export default function PorteiroPackages() {
       <SubscriptionGate>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Encomendas</h1>
-            <p className="text-muted-foreground">
-              Busque por unidade para ver as encomendas
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Package className="w-6 h-6 text-primary" />
+              Encomendas
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Busque por unidade para gerenciar as encomendas
             </p>
           </div>
-          <Button onClick={() => navigate("/porteiro/registrar")} className="gap-2">
+          <Button 
+            onClick={() => navigate("/porteiro/registrar")} 
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/25"
+          >
             <PackagePlus className="w-4 h-4" />
             Nova Encomenda
           </Button>
         </div>
 
-        {/* Quick Search by Code */}
-        <Card>
+        {/* Search Card */}
+        <Card className="border-border/50 shadow-sm">
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="search-code" className="flex items-center gap-2">
-                  <Search className="w-4 h-4" />
-                  Buscar Unidade (Bloco + Apartamento)
-                </Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1 max-w-xs">
-                    <Input
-                      id="search-code"
-                      placeholder="Ex: 0344 = Bloco 03, Apto 44"
-                      value={searchCode}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                        setSearchCode(val);
-                        setSearchError("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleSearch();
-                        }
-                      }}
-                      disabled={isSearching}
-                      className={searchError ? "border-destructive" : ""}
-                      maxLength={6}
-                    />
-                    {searchCode && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={clearSearch}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <Button
-                    onClick={handleSearch}
-                    disabled={isSearching || !searchCode}
-                    className="gap-2"
-                  >
-                    {isSearching ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4" />
-                    )}
-                    Buscar
-                  </Button>
-                </div>
-                {searchError && (
-                  <p className="text-sm text-destructive">{searchError}</p>
-                )}
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Search className="w-4 h-4 text-primary" />
+                Buscar Unidade
               </div>
-
-              {/* Selected Apartment Display */}
-              {selectedApartment && (
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lg uppercase">
-                          {selectedApartment.blockName} - APTO {selectedApartment.number}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedApartment.condominiumName}
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={clearSearch}>
-                      <X className="w-4 h-4 mr-1" />
-                      Limpar
-                    </Button>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground text-sm hidden sm:inline">Bloco + Apto</span>
                   </div>
+                  <Input
+                    placeholder="Ex: 0344"
+                    value={searchCode}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setSearchCode(val);
+                      setSearchError("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearch();
+                      }
+                    }}
+                    disabled={isSearching}
+                    className={cn(
+                      "pl-10 sm:pl-28 h-12 text-base font-mono tracking-wider",
+                      searchError ? "border-destructive ring-1 ring-destructive/20" : "focus:ring-2 focus:ring-primary/20"
+                    )}
+                    maxLength={6}
+                  />
+                  {searchCode && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
+                      onClick={clearSearch}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={isSearching || !searchCode}
+                  className="h-12 px-6 gap-2"
+                >
+                  {isSearching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">Buscar</span>
+                </Button>
+              </div>
+              
+              {searchError && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-destructive" />
+                  {searchError}
+                </p>
               )}
             </div>
           </CardContent>
         </Card>
 
+        {/* Selected Apartment Display */}
+        {selectedApartment && (
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-md">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-lg uppercase">
+                        {selectedApartment.blockName} - APTO {selectedApartment.number}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedApartment.condominiumName}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {pendingCount > 0 ? `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}` : 'Nenhuma pendente'}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearSearch}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Trocar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Packages List - Only shown when apartment is selected */}
         {selectedApartment && (
           <>
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="pendente" className="gap-2">
-                  <Package className="w-4 h-4" />
-                  <span className="hidden sm:inline">Pendentes</span>
-                  {pendingCount > 0 && (
-                    <span className="ml-1 px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground text-xs font-medium">
-                      {pendingCount}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="retirada" className="gap-2">
-                  <PackageCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Retiradas</span>
-                </TabsTrigger>
-                <TabsTrigger value="all">Todas</TabsTrigger>
-              </TabsList>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+                <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 rounded-lg">
+                  <TabsTrigger 
+                    value="pendente" 
+                    className={cn(
+                      "gap-2 py-2.5 px-4 rounded-md transition-all",
+                      activeTab === "pendente" && "bg-background shadow-sm"
+                    )}
+                  >
+                    <Package className="w-4 h-4" />
+                    <span className="hidden sm:inline">Pendentes</span>
+                    {pendingCount > 0 && (
+                      <Badge 
+                        variant="default" 
+                        className="ml-1 px-1.5 py-0.5 text-xs bg-yellow-500 hover:bg-yellow-600"
+                      >
+                        {pendingCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="retirada" 
+                    className={cn(
+                      "gap-2 py-2.5 px-4 rounded-md transition-all",
+                      activeTab === "retirada" && "bg-background shadow-sm"
+                    )}
+                  >
+                    <PackageCheck className="w-4 h-4" />
+                    <span className="hidden sm:inline">Retiradas</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="all"
+                    className={cn(
+                      "py-2.5 px-4 rounded-md transition-all",
+                      activeTab === "all" && "bg-background shadow-sm"
+                    )}
+                  >
+                    Todas
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
-              <TabsContent value={activeTab} className="mt-6">
-                {loading ? (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-64 rounded-xl" />
-                    ))}
-                  </div>
-                ) : filteredPackages.length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <Package className="w-12 h-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">
-                        {activeTab === "pendente"
-                          ? "Nenhuma encomenda pendente"
-                          : activeTab === "retirada"
-                          ? "Nenhuma encomenda retirada"
-                          : "Nenhuma encomenda"}
-                      </h3>
-                      <p className="text-muted-foreground text-center">
-                        Não há encomendas {activeTab !== "all" ? activeTab + "s" : ""} para esta unidade
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3">
-                    {filteredPackages.map((pkg) => (
-                      <PackageCard
-                        key={pkg.id}
-                        id={pkg.id}
-                        photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
-                        pickupCode={pkg.pickup_code}
-                        status={pkg.status}
-                        apartmentNumber={pkg.apartment?.number || ""}
-                        blockName={pkg.block?.name || ""}
-                        condominiumName={pkg.condominium?.name}
-                        condominiumId={pkg.condominium_id}
-                        receivedAt={pkg.received_at}
-                        description={pkg.description || undefined}
-                        onClick={() => handlePackageClick(pkg)}
-                        onViewDetails={() => handleViewDetails(pkg)}
-                        onResendNotification={() => handleResendNotification(pkg)}
-                        onRequestDeletion={() => selectedApartment && fetchPackages(selectedApartment.id, activeTab, 0, false)}
-                        showCondominium={false}
-                        showPickupCode={false}
-                        canRequestDeletion
-                        notificationStatus={notificationStatusMap[pkg.id] || null}
-                        notificationTimestamps={notificationDataMap[pkg.id]?.timestamps}
-                      />
-                    ))}
-                  </div>
-                )}
-                {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      className="gap-2"
-                    >
-                      {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                      Carregar mais
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+            <TabsContent value={activeTab} className="mt-0">
+              {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-72 rounded-xl" />
+                  ))}
+                </div>
+              ) : filteredPackages.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                      {activeTab === "pendente" ? (
+                        <Package className="w-8 h-8 text-muted-foreground" />
+                      ) : activeTab === "retirada" ? (
+                        <PackageCheck className="w-8 h-8 text-muted-foreground" />
+                      ) : (
+                        <Package className="w-8 h-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">
+                      {activeTab === "pendente"
+                        ? "Nenhuma encomenda pendente"
+                        : activeTab === "retirada"
+                        ? "Nenhuma encomenda retirada"
+                        : "Nenhuma encomenda"}
+                    </h3>
+                    <p className="text-muted-foreground text-center max-w-sm">
+                      {activeTab === "pendente"
+                        ? "Todas as encomendas foram retiradas pelos moradores."
+                        : activeTab === "retirada"
+                        ? "Ainda não há encomendas retiradas nesta unidade."
+                        : "Não há encomendas registradas para esta unidade."}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredPackages.map((pkg) => (
+                    <PackageCard
+                      key={pkg.id}
+                      id={pkg.id}
+                      photoUrl={pkg.signedPhotoUrl || pkg.photo_url}
+                      pickupCode={pkg.pickup_code}
+                      status={pkg.status}
+                      apartmentNumber={pkg.apartment?.number || ""}
+                      blockName={pkg.block?.name || ""}
+                      condominiumName={pkg.condominium?.name}
+                      condominiumId={pkg.condominium_id}
+                      receivedAt={pkg.received_at}
+                      description={pkg.description || undefined}
+                      onClick={() => handlePackageClick(pkg)}
+                      onViewDetails={() => handleViewDetails(pkg)}
+                      onResendNotification={() => handleResendNotification(pkg)}
+                      onRequestDeletion={() => selectedApartment && fetchPackages(selectedApartment.id, activeTab, 0, false)}
+                      showCondominium={false}
+                      showPickupCode={false}
+                      canRequestDeletion
+                      notificationStatus={notificationStatusMap[pkg.id] || null}
+                      notificationTimestamps={notificationDataMap[pkg.id]?.timestamps}
+                    />
+                  ))}
+                </div>
+              )}
+              {activeTab !== "pendente" && hasMore && filteredPackages.length > 0 && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="gap-2"
+                  >
+                    {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Carregar mais
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
           </>
         )}
 
         {/* Initial State - No apartment selected */}
         {!selectedApartment && !isSearching && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Search className="w-12 h-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
+          <Card className="border-dashed bg-gradient-to-b from-muted/50 to-muted/20">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <Search className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">
                 Busque uma unidade
               </h3>
-              <p className="text-muted-foreground text-center max-w-sm">
-                Digite o código da unidade no formato BBAA (ex: 0344 para Bloco 03, Apto 44) para ver as encomendas
+              <p className="text-muted-foreground text-center max-w-md mb-6">
+                Digite o código da unidade no formato BBAA<br />
+                <span className="text-sm">(ex: 0344 para Bloco 03, Apto 44)</span>
               </p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-mono">BB</span>
+                  <span className="text-xs">= Bloco</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
+                  <Building2 className="w-4 h-4" />
+                  <span className="font-mono">AA</span>
+                  <span className="text-xs">= Apto</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -625,7 +707,7 @@ export default function PorteiroPackages() {
               )}
               {notificationModalState === "success" && (
                 <div className="rounded-full bg-primary/10 p-4">
-                  <CheckCircle2 className="w-10 h-10 text-primary" />
+                  <Bell className="w-10 h-10 text-primary" />
                 </div>
               )}
               {notificationModalState === "error" && (
