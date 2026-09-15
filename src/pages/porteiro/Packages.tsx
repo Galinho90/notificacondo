@@ -470,7 +470,7 @@ export default function PorteiroPackages() {
 
           {/* Tabs section */}
           {selectedApartment && (
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} defaultValue="pendente">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
               <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="pendente" className="gap-1.5">
                   <Package className="w-3.5 h-3.5" />
