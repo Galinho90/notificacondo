@@ -102,11 +102,18 @@ export default function PorteiroPackages() {
         const from = pageIndex * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
+        // IMPORTANTE: `pickup_code` NUNCA é selecionado aqui — o porteiro não
+        // pode ter acesso ao código de retirada por nenhum meio (tela, modal
+        // ou resposta de rede). A conferência acontece somente no servidor.
         let query = supabase
           .from("packages")
           .select(
             `
-              *,
+              id, condominium_id, block_id, apartment_id, resident_id,
+              received_by, received_by_name, description, photo_url, status,
+              received_at, picked_up_at, picked_up_by, picked_up_by_name,
+              created_at, deleted_at, tracking_code, package_type_id,
+              notification_sent, notification_sent_at, notification_count,
               apartment:apartments(id, number),
               block:blocks(id, name),
               condominium:condominiums(id, name),
@@ -133,8 +140,10 @@ export default function PorteiroPackages() {
             const signedPhotoUrl = await getSignedPackagePhotoUrl(pkg.photo_url);
             return {
               ...pkg,
+              // Placeholder: o código real nunca chega ao cliente da portaria.
+              pickup_code: "",
               signedPhotoUrl: signedPhotoUrl || pkg.photo_url,
-            };
+            } as PackageWithSignedUrl;
           })
         );
 
