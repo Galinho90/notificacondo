@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell } from "lucide-react";
+import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell, HelpCircle, ArrowRight, PackageOpen } from "lucide-react";
 import SubscriptionGate from "@/components/sindico/SubscriptionGate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,7 @@ export default function PorteiroPackages() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<ApartmentInfo | null>(null);
 
-  const PAGE_SIZE = 3;
+  const PAGE_SIZE = 6;
   const [packages, setPackages] = useState<PackageWithSignedUrl[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -311,7 +311,7 @@ export default function PorteiroPackages() {
 
       toast({
         title: "Encomenda retirada!",
-        description: `Encomenda baixada do sistema corretamente. Retirada por ${pickedUpByName}.`,
+        description: `Encomenda baixada do sistema. Retirada por ${pickedUpByName}.`,
       });
 
       // Refresh packages
@@ -367,8 +367,6 @@ export default function PorteiroPackages() {
     fetchPackages(selectedApartment.id, activeTab, 0, false);
   }, [activeTab, selectedApartment, fetchPackages]);
 
-  const filteredPackages = packages;
-
   const handleLoadMore = () => {
     if (!selectedApartment || loadingMore) return;
     const next = page + 1;
@@ -376,19 +374,50 @@ export default function PorteiroPackages() {
     fetchPackages(selectedApartment.id, activeTab, next, true);
   };
 
+  // Helper to render loading skeletons
+  const renderSkeletons = (count = 3) => (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <Card key={i} className="p-0 overflow-hidden">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Helper to render empty state
+  const renderEmptyState = (title: string, description: string, icon: React.ReactNode) => (
+    <Card className="border-dashed">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          {icon}
+        </div>
+        <h3 className="font-semibold text-lg mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground max-w-xs">{description}</p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <DashboardLayout>
       <SubscriptionGate>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+          {/* Header com instruções */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Package className="w-6 h-6 text-primary" />
                 Encomendas
               </h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Busque por unidade para gerenciar as encomendas
+              <p className="text-muted-foreground text-sm">
+                Gerencie as encomendas recebidas na portaria
               </p>
             </div>
             <Button
@@ -400,10 +429,19 @@ export default function PorteiroPackages() {
             </Button>
           </div>
 
-          {/* Search Card */}
+          {/* Card de Busca */}
           <Card className="border-border/50 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="space-y-4">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Search className="w-4 h-4 text-primary" />
+                Buscar Apartamento
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Digite o código da unidade para ver suas encomendas
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="search-code" className="text-sm font-medium">
                     Código da unidade
@@ -421,59 +459,98 @@ export default function PorteiroPackages() {
                         maxLength={6}
                       />
                     </div>
-                    <Button onClick={handleSearch} disabled={isSearching} className="gap-2">
+                    <Button onClick={handleSearch} disabled={isSearching} className="gap-2 min-w-[100px]">
                       {isSearching ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Search className="w-4 h-4" />
+                        <>
+                          <Search className="w-4 h-4" />
+                          Buscar
+                        </>
                       )}
-                      Buscar
                     </Button>
                     {selectedApartment && (
-                      <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground">
+                      <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground px-3">
                         <X className="w-4 h-4" />
-                        Limpar
                       </Button>
                     )}
                   </div>
-                  {searchError && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <X className="w-3 h-3" />
+                  {searchError ? (
+                    <p className="text-sm text-destructive flex items-center gap-1.5 mt-1">
+                      <X className="w-3.5 h-3.5" />
                       {searchError}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      Os 2 primeiros dígitos = bloco | os restantes = apartamento
                     </p>
                   )}
                 </div>
-
-                {/* Selected Apartment Info */}
-                {selectedApartment && (
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm">
-                        {selectedApartment.blockName} - {selectedApartment.number}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedApartment.condominiumName}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="gap-1">
-                      <Package className="w-3 h-3" />
-                      {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
-                    </Badge>
-                  </div>
-                )}
               </div>
+
+              {/* Informações do apartamento selecionado */}
+              {selectedApartment && (
+                <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-base">
+                      {selectedApartment.blockName} - {selectedApartment.number}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedApartment.condominiumName}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={pendingCount > 0 ? "default" : "secondary"} 
+                    className="gap-1.5 text-sm px-3 py-1.5"
+                  >
+                    <Package className="w-4 h-4" />
+                    {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Estado inicial - antes de buscar */}
+          {!selectedApartment && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                  <PackageOpen className="w-10 h-10 text-primary/60" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Busque uma unidade</h3>
+                <p className="text-sm text-muted-foreground max-w-md mb-6">
+                  Digite o código do apartamento acima para visualizar as encomendas recebidas, registrar retiradas e muito mais.
+                </p>
+                
+                {/* Exemplo visual */}
+                <div className="bg-muted/50 rounded-lg p-4 text-left w-full max-w-sm">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Exemplo de código:</p>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 rounded-lg px-3 py-2">
+                      <span className="font-mono font-bold text-primary">0344</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <div className="text-sm">
+                      <p className="font-medium">Bloco 03</p>
+                      <p className="text-muted-foreground">Apto 44</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabs section */}
           {selectedApartment && (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="pendente" className="gap-1.5">
-                  <Package className="w-3.5 h-3.5" />
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="pendente" className="gap-1.5 relative">
+                  <Package className="w-4 h-4" />
                   Pendentes
                   {pendingCount > 0 && (
                     <Badge variant="destructive" className="ml-1 h-5 min-w-5 justify-center text-[10px]">
@@ -482,48 +559,34 @@ export default function PorteiroPackages() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="retirada" className="gap-1.5">
-                  <PackageCheck className="w-3.5 h-3.5" />
+                  <PackageCheck className="w-4 h-4" />
                   Retiradas
                 </TabsTrigger>
                 <TabsTrigger value="all" className="gap-1.5">
-                  <Bell className="w-3.5 h-3.5" />
+                  <Bell className="w-4 h-4" />
                   Todas
                 </TabsTrigger>
               </TabsList>
 
               {/* Tab: Pendentes */}
-              <TabsContent value="pendente" className="mt-0">
+              <TabsContent value="pendente" className="mt-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Encomendas aguardando retirada
+                  </h3>
+                </div>
+                
                 {loading ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i} className="p-0 overflow-hidden">
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-5 w-24" />
-                          </div>
-                          <Skeleton className="h-3 w-full" />
-                          <Skeleton className="h-3 w-2/3" />
-                          <Skeleton className="h-9 w-full mt-2" />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : filteredPackages.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                        <Package className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda pendente</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        Este apartamento não tem encomendas pendentes de retirada.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  renderSkeletons()
+                ) : packages.length === 0 ? (
+                  renderEmptyState(
+                    "Tudo entregue!",
+                    "Este apartamento não possui encomendas pendentes de retirada.",
+                    <PackageCheck className="w-8 h-8 text-muted-foreground" />
+                  )
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredPackages.map((pkg) => (
+                    {packages.map((pkg) => (
                       <PackageCard
                         key={pkg.id}
                         id={pkg.id}
@@ -549,38 +612,25 @@ export default function PorteiroPackages() {
               </TabsContent>
 
               {/* Tab: Retiradas */}
-              <TabsContent value="retirada" className="mt-0">
+              <TabsContent value="retirada" className="mt-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Histórico de encomendas retiradas
+                  </h3>
+                </div>
+                
                 {loading ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i} className="p-0 overflow-hidden">
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-5 w-24" />
-                          </div>
-                          <Skeleton className="h-3 w-full" />
-                          <Skeleton className="h-3 w-2/3" />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : filteredPackages.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                        <PackageCheck className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda retirada</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        Este apartamento ainda não teve encomendas retiradas.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  renderSkeletons()
+                ) : packages.length === 0 ? (
+                  renderEmptyState(
+                    "Nenhuma retirada registrada",
+                    "Quando uma encomenda for retirada, ela aparecerá aqui.",
+                    <Package className="w-8 h-8 text-muted-foreground" />
+                  )
                 ) : (
                   <>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {filteredPackages.map((pkg) => (
+                      {packages.map((pkg) => (
                         <PackageCard
                           key={pkg.id}
                           id={pkg.id}
@@ -599,8 +649,8 @@ export default function PorteiroPackages() {
                         />
                       ))}
                     </div>
-                    {hasMore && filteredPackages.length > 0 && (
-                      <div className="flex justify-center mt-6">
+                    {hasMore && packages.length > 0 && (
+                      <div className="flex justify-center pt-4">
                         <Button
                           variant="outline"
                           onClick={handleLoadMore}
@@ -617,38 +667,25 @@ export default function PorteiroPackages() {
               </TabsContent>
 
               {/* Tab: Todas */}
-              <TabsContent value="all" className="mt-0">
+              <TabsContent value="all" className="mt-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Todas as encomendas deste apartamento
+                  </h3>
+                </div>
+                
                 {loading ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i} className="p-0 overflow-hidden">
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-5 w-24" />
-                          </div>
-                          <Skeleton className="h-3 w-full" />
-                          <Skeleton className="h-3 w-2/3" />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : filteredPackages.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                        <Bell className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="font-semibold text-lg mb-1">Nenhuma encomenda registrada</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        Este apartamento ainda não recebeu nenhuma encomenda.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  renderSkeletons()
+                ) : packages.length === 0 ? (
+                  renderEmptyState(
+                    "Nenhuma encomenda encontrada",
+                    "Este apartamento ainda não recebeu nenhuma encomenda.",
+                    <Bell className="w-8 h-8 text-muted-foreground" />
+                  )
                 ) : (
                   <>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {filteredPackages.map((pkg) => (
+                      {packages.map((pkg) => (
                         <PackageCard
                           key={pkg.id}
                           id={pkg.id}
@@ -670,8 +707,8 @@ export default function PorteiroPackages() {
                         />
                       ))}
                     </div>
-                    {hasMore && filteredPackages.length > 0 && (
-                      <div className="flex justify-center mt-6">
+                    {hasMore && packages.length > 0 && (
+                      <div className="flex justify-center pt-4">
                         <Button
                           variant="outline"
                           onClick={handleLoadMore}
@@ -723,7 +760,7 @@ export default function PorteiroPackages() {
                 <div className="flex flex-col items-center gap-3">
                   <CheckCircle2 className="w-12 h-12 text-green-500" />
                   <p className="font-semibold">Notificação enviada!</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground text-center">
                     {notificationSuccessCount} notificação(ões) reenviada(s) com sucesso.
                   </p>
                 </div>
