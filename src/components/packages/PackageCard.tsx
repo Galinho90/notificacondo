@@ -50,14 +50,16 @@ interface PackageCardProps {
   canRequestDeletion?: boolean;
 }
 
-const STATUS_STYLES: Record<PackageStatus, { banner: string; icon: string; label: string }> = {
+const STATUS_BARS: Record<PackageStatus, { bg: string; text: string; icon: string; label: string }> = {
   pendente: {
-    banner: "from-amber-500 to-orange-500",
+    bg: "bg-gradient-to-r from-orange-500 to-amber-500",
+    text: "text-white",
     icon: "text-white",
     label: "Aguardando retirada",
   },
   retirada: {
-    banner: "from-emerald-500 to-teal-500",
+    bg: "bg-gradient-to-r from-emerald-500 to-teal-500",
+    text: "text-white",
     icon: "text-white",
     label: "Retirada confirmada",
   },
@@ -89,7 +91,7 @@ export function PackageCard({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const canResend = Boolean(onResendNotification);
   const canDelete = canRequestDeletion && Boolean(condominiumId) && status !== "retirada";
-  const style = STATUS_STYLES[status];
+  const bar = STATUS_BARS[status];
 
   const formattedDate = format(new Date(receivedAt), "dd/MM/yyyy 'às' HH:mm", {
     locale: ptBR,
@@ -197,34 +199,38 @@ export function PackageCard({
       <div className="flex flex-col gap-1">
         <Card
           className={cn(
-            "overflow-hidden transition-all hover:shadow-lg group",
+            "overflow-hidden transition-all hover:shadow-lg",
             "border-0 shadow-md",
             onClick && "cursor-pointer"
           )}
           onClick={onClick}
         >
-          {showPickupCode && (
-            <div className={cn("bg-gradient-to-r px-4 py-2.5", style.banner)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className={cn("w-5 h-5", style.icon)} />
-                  <span className="font-mono font-bold text-lg text-white tracking-wider">
-                    {pickupCode}
-                  </span>
-                </div>
-                <span className="text-xs text-white/90 font-medium flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {style.label}
+          {/* Barra de cor no topo */}
+          <div className={cn("px-3 py-1.5", bar.bg)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {status === "pendente" ? (
+                  <Package className={cn("w-3.5 h-3.5", bar.icon)} />
+                ) : (
+                  <CheckCircle2 className={cn("w-3.5 h-3.5", bar.icon)} />
+                )}
+                <span className="font-mono font-bold text-sm text-white tracking-wider">
+                  {pickupCode}
                 </span>
               </div>
+              <span className="text-[10px] text-white/90 font-medium flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {bar.label}
+              </span>
             </div>
-          )}
+          </div>
 
-          <div className="relative bg-gradient-to-br from-muted to-muted/50">
+          {/* Imagem compacta */}
+          <div className="relative bg-muted/40">
             <div className="aspect-[4/3] relative">
               <PackageCardImage src={photoUrl} />
-              <div className="absolute top-3 left-3">
-                <PackageStatusBadge status={status} />
+              <div className="absolute top-2 left-2">
+                <PackageStatusBadge status={status} className="text-[10px] px-1.5 py-0.5" />
               </div>
               {(onViewDetails || canDelete) && (
                 <DropdownMenu>
@@ -232,15 +238,15 @@ export function PackageCard({
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="absolute top-3 right-3 h-8 w-8 shadow-lg"
+                      className="absolute top-2 right-2 h-7 w-7 shadow-md"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     {onViewDetails && (
                       <DropdownMenuItem onClick={onViewDetails}>
-                        <Info className="w-4 h-4 mr-2" />
+                        <Info className="w-3.5 h-3.5 mr-2" />
                         Ver Detalhes
                       </DropdownMenuItem>
                     )}
@@ -249,7 +255,7 @@ export function PackageCard({
                         onClick={() => setDeleteOpen(true)}
                         className="text-destructive focus:text-destructive"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-3.5 h-3.5 mr-2" />
                         Solicitar exclusão
                       </DropdownMenuItem>
                     )}
@@ -259,25 +265,26 @@ export function PackageCard({
             </div>
           </div>
 
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Building2 className="w-4.5 h-4.5 text-primary" />
+          {/* Rodapé compacto */}
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                <Building2 className="w-3.5 h-3.5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm uppercase text-foreground">
+                <p className="font-semibold text-xs uppercase text-foreground leading-tight">
                   {blockName} - Apto {apartmentNumber}
                 </p>
                 {showCondominium && condominiumName && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-[10px] text-muted-foreground truncate">
                     {condominiumName}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Clock className="w-3 h-3 shrink-0" />
               <span>{formattedDate}</span>
             </div>
 
@@ -285,48 +292,29 @@ export function PackageCard({
               <DeliveryStatusTracker
                 status={notificationStatus}
                 timestamps={notificationTimestamps}
-                className="mt-1"
+                className="mt-0.5"
               />
             )}
 
             {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 pt-1 border-t">
+              <p className="text-[11px] text-muted-foreground line-clamp-1 pt-0.5 border-t border-border/50">
                 {description}
               </p>
             )}
 
             {canResend && status === "pendente" && (
-              <div className="pt-2 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 text-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmOpen(true);
-                  }}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Reenviar notificação WhatsApp
-                </Button>
-              </div>
-            )}
-
-            {canDelete && (
-              <div className="pt-2 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Solicitar exclusão
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 text-[11px] h-7 mt-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmOpen(true);
+                }}
+              >
+                <RefreshCw className="h-3 w-3" />
+                Reenviar notificação
+              </Button>
             )}
           </CardContent>
         </Card>
