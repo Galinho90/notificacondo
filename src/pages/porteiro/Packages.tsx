@@ -290,32 +290,38 @@ export default function PorteiroPackages() {
     setIsDetailsDialogOpen(true);
   };
 
-  const handleConfirmPickup = async (pickedUpByName: string) => {
+  /**
+   * Confirma a retirada. O código digitado é conferido exclusivamente no
+   * servidor (`confirm_package_pickup_secure`), de modo que o código correto
+   * nunca precisa — nem pode — estar disponível na portaria.
+   */
+  const handleConfirmPickup = async (pickedUpByName: string, code: string) => {
     if (!selectedPackage || !user) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
     try {
-      // Usa RPC para garantir que o timestamp seja do servidor
-      const { error } = await supabase.rpc('confirm_package_pickup' as any, {
+      const { data, error } = await supabase.rpc("confirm_package_pickup_secure" as any, {
         p_package_id: selectedPackage.id,
+        p_code: code,
         p_picked_up_by: user.id,
         p_picked_up_by_name: pickedUpByName,
       });
 
-      if (error) {
-        // Fallback para update direto se RPC não existir
-        const { error: updateError } = await supabase
-          .from("packages")
-          .update({
-            status: "retirada" as PackageStatus,
-            picked_up_at: new Date().toISOString(),
-            picked_up_by: user.id,
-            picked_up_by_name: pickedUpByName,
-          })
-          .eq("id", selectedPackage.id);
+      if (error) throw error;
 
-        if (updateError) throw updateError;
+      const result = (data ?? {}) as { success?: boolean; reason?: string };
+
+      if (!result.success) {
+        const messages: Record<string, string> = {
+          invalid_code: "Código de retirada incorreto. Peça ao morador o código recebido por WhatsApp.",
+          already_picked_up: "Esta encomenda já foi retirada.",
+          not_found: "Encomenda não encontrada.",
+        };
+        return {
+          success: false,
+          error: messages[result.reason ?? ""] ?? "Não foi possível confirmar a retirada.",
+        };
       }
 
       toast({
@@ -348,7 +354,7 @@ export default function PorteiroPackages() {
         body: {
           package_id: pkg.id,
           apartment_id: pkg.apartment_id,
-          pickup_code: pkg.pickup_code,
+          // pickup_code omitido de propósito: resolvido no servidor.
           photo_url: pkg.photo_url,
         },
       });
