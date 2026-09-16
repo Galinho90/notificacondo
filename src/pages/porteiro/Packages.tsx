@@ -649,27 +649,6 @@ export default function PorteiroPackages() {
                   </div>
                 </div>
 
-                {/* Coluna lateral: instruções visuais */}
-                <div className="lg:col-span-2 space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Como funciona</p>
-                  <div className="space-y-2.5">
-                    {[
-                      { step: 1, label: 'Digite o código', sub: 'Ex: Bloco 03 + Apto 44 = 0344', color: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800' },
-                      { step: 2, label: 'Veja as encomendas', sub: 'Pendentes e histórico em um lugar', color: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800' },
-                      { step: 3, label: 'Confirme a retirada', sub: 'Código sigiloso — morador informa', color: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' },
-                    ].map((item) => (
-                      <div key={item.step} className={`flex items-center gap-3 p-2.5 rounded-lg border ${item.color}`}>
-                        <div className="w-7 h-7 rounded-full bg-background border flex items-center justify-center shrink-0">
-                          <span className="text-xs font-bold text-muted-foreground">{item.step}</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold">{item.label}</p>
-                          <p className="text-[11px] text-muted-foreground">{item.sub}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               {/* Informações do apartamento selecionado */}
