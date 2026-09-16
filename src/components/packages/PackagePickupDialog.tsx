@@ -105,7 +105,9 @@ export function PackagePickupDialog({
       setCodeValid(null);
       return;
     }
-    const isValid = inputCode.toUpperCase() === (package_.pickup_code || "").toUpperCase();
+    const storedCode = (package_.pickup_code || "").toUpperCase().trim();
+    const entered = inputCode.toUpperCase().trim();
+    const isValid = entered.length === 6 && entered === storedCode;
     setCodeValid(isValid);
   }, [inputCode, package_]);
 
