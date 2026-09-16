@@ -227,7 +227,7 @@ export function PackageCard({
 
           {/* Imagem compacta */}
           <div className="relative bg-muted/40">
-            <div className="aspect-[4/3] relative">
+            <div className="relative">
               <PackageCardImage src={photoUrl} />
               <div className="absolute top-2 left-2">
                 <PackageStatusBadge status={status} className="text-[10px] px-1.5 py-0.5" />
