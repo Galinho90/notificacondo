@@ -80,6 +80,7 @@ export function PackagePickupDialog({
       setPickedUpByName("");
       setCodeValid(null);
       setErrorMessage("");
+      setInlineError("");
       setSignedPhotoUrl(null);
     }
   }, [open]);
