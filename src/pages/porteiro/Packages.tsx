@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell, HelpCircle, ArrowRight, PackageOpen, ShieldCheck } from "lucide-react";
+import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell, HelpCircle, ArrowRight, PackageOpen, ShieldCheck, Hash } from "lucide-react";
 import SubscriptionGate from "@/components/sindico/SubscriptionGate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -509,96 +509,209 @@ export default function PorteiroPackages() {
           </div>
 
           {/* Card de Busca */}
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Search className="w-4 h-4 text-primary" />
-                Buscar Apartamento
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Digite o código da unidade para ver suas encomendas
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="search-code" className="text-sm font-medium">
-                    Código da unidade
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="search-code"
-                        placeholder="Ex: 0344 (Bloco 03, Apto 44)"
-                        value={searchCode}
-                        onChange={(e) => setSearchCode(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                        className="pl-10 font-mono text-center tracking-widest"
-                        maxLength={6}
-                      />
+          <Card className="border-border/50 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 px-6 py-5 border-b border-border/50">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 bg-primary/15 rounded-xl flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">Buscar Apartamento</h2>
+                  <p className="text-xs text-muted-foreground">Localize a unidade para gerenciar encomendas</p>
+                </div>
+              </div>
+            </div>
+
+            <CardContent className="p-6">
+              {/* Layout em grid: busca rápida + instruções */}
+              <div className="grid gap-6 lg:grid-cols-5">
+                {/* Coluna principal: busca por código */}
+                <div className="lg:col-span-3 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="search-code" className="text-sm font-medium flex items-center gap-2">
+                        <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                        Código da Unidade
+                      </Label>
+                      <span className={`text-xs font-mono transition-colors ${
+                        searchCode.length === 0 ? 'text-muted-foreground' :
+                        searchCode.length < 4 ? 'text-amber-500' :
+                        searchCode.length >= 4 && searchCode.length <= 6 ? 'text-emerald-500' :
+                        'text-muted-foreground'
+                      }`}>
+                        {searchCode.length}/6
+                      </span>
                     </div>
-                    <Button onClick={handleSearch} disabled={isSearching} className="gap-2 min-w-[100px]">
-                      {isSearching ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Search className="w-4 h-4" />
-                          Buscar
-                        </>
-                      )}
-                    </Button>
-                    {selectedApartment && (
-                      <Button variant="ghost" onClick={clearSearch} className="gap-2 text-muted-foreground px-3">
-                        <X className="w-4 h-4" />
+
+                    <div className="flex gap-2">
+                      <div className="relative flex-1 group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                          <Search className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <Input
+                          id="search-code"
+                          placeholder="0344"
+                          value={searchCode}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                            setSearchCode(val);
+                            setSearchError("");
+                          }}
+                          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                          className={`pl-10 pr-16 font-mono text-xl tracking-[0.3em] text-center h-12 transition-all ${
+                            searchError ? 'border-destructive ring-1 ring-destructive/30' :
+                            searchCode.length >= 4 && searchCode.length <= 6 ? 'border-emerald-400/60 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-400/30' :
+                            searchCode.length > 0 ? 'border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10' :
+                            ''
+                          }`}
+                          maxLength={6}
+                        />
+                        {/* Preview visual do código */}
+                        {searchCode.length > 0 && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-0.5">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`w-4 h-6 rounded-sm border transition-all ${
+                                  i < searchCode.length
+                                    ? searchError
+                                      ? 'bg-destructive/20 border-destructive'
+                                      : searchCode.length >= 4
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-400'
+                                        : 'bg-amber-100 dark:bg-amber-900/40 border-amber-400'
+                                    : 'bg-muted border-border'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        onClick={handleSearch}
+                        disabled={isSearching || searchCode.length < 3}
+                        className="h-12 px-5 gap-2 bg-primary hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+                      >
+                        {isSearching ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4" />
+                            Buscar
+                          </>
+                        )}
                       </Button>
+                      {selectedApartment && (
+                        <Button
+                          variant="outline"
+                          onClick={clearSearch}
+                          className="h-12 px-3 gap-2 text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Feedback de erro ou dica */}
+                    {searchError ? (
+                      <p className="text-sm text-destructive flex items-center gap-1.5 font-medium">
+                        <X className="w-3.5 h-3.5" />
+                        {searchError}
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-mono px-1.5 py-0.5 rounded ${
+                            searchCode.length >= 2 && searchCode.length <= 6 ? 'bg-primary/10 text-primary font-semibold' : 'bg-muted'
+                          }`}>34</span>
+                          <ArrowRight className="w-3 h-3" />
+                          <span>Bloco</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-mono px-1.5 py-0.5 rounded ${
+                            searchCode.length >= 4 ? 'bg-primary/10 text-primary font-semibold' : 'bg-muted'
+                          }`}>44</span>
+                          <ArrowRight className="w-3 h-3" />
+                          <span>Apartamento</span>
+                        </div>
+                        {searchCode.length < 3 && searchCode.length > 0 && (
+                          <span className="ml-auto text-amber-500 animate-pulse">
+                            Digite mais {3 - searchCode.length} dígito(s)...
+                          </span>
+                        )}
+                        {searchCode.length >= 4 && searchCode.length <= 6 && (
+                          <span className="ml-auto text-emerald-500 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Formato válido — pressione Enter
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {searchError ? (
-                    <p className="text-sm text-destructive flex items-center gap-1.5 mt-1">
-                      <X className="w-3.5 h-3.5" />
-                      {searchError}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                      <HelpCircle className="w-3.5 h-3.5" />
-                      Os 2 primeiros dígitos = bloco | os restantes = apartamento
-                    </p>
-                  )}
+                </div>
+
+                {/* Coluna lateral: instruções visuais */}
+                <div className="lg:col-span-2 space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Como funciona</p>
+                  <div className="space-y-2.5">
+                    {[
+                      { step: 1, label: 'Digite o código', sub: 'Ex: Bloco 03 + Apto 44 = 0344', color: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800' },
+                      { step: 2, label: 'Veja as encomendas', sub: 'Pendentes e histórico em um lugar', color: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800' },
+                      { step: 3, label: 'Confirme a retirada', sub: 'Código sigiloso — morador informa', color: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' },
+                    ].map((item) => (
+                      <div key={item.step} className={`flex items-center gap-3 p-2.5 rounded-lg border ${item.color}`}>
+                        <div className="w-7 h-7 rounded-full bg-background border flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-muted-foreground">{item.step}</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold">{item.label}</p>
+                          <p className="text-[11px] text-muted-foreground">{item.sub}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Informações do apartamento selecionado */}
               {selectedApartment && (
-                <div className="space-y-3">
-                  <div className="flex flex-col gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg sm:flex-row sm:items-center">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                      <Building2 className="w-6 h-6 text-primary" />
+                <div className="mt-6 pt-6 border-t border-border/50 space-y-3">
+                  <div className="flex flex-col gap-3 p-4 bg-gradient-to-r from-primary/8 via-primary/5 to-primary/8 border border-primary/20 rounded-xl sm:flex-row sm:items-center">
+                    <div className="w-14 h-14 bg-primary/12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
+                      <Building2 className="w-7 h-7 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base">
-                        {selectedApartment.blockName} - {selectedApartment.number}
+                      <p className="font-bold text-lg leading-tight">
+                        {selectedApartment.blockName} — {selectedApartment.number}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
                         {selectedApartment.condominiumName}
                       </p>
                     </div>
-                    <Badge
-                      variant={pendingCount > 0 ? "default" : "secondary"}
-                      className="gap-1.5 text-sm px-3 py-1.5 self-start sm:self-auto"
-                    >
-                      <Package className="w-4 h-4" />
-                      {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
-                    </Badge>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <Badge
+                        variant={pendingCount > 0 ? "default" : "secondary"}
+                        className={`gap-1.5 text-sm px-3.5 py-1.5 ${
+                          pendingCount > 0 ? 'bg-primary/15 text-primary border-primary/25 hover:bg-primary/20' : ''
+                        }`}
+                      >
+                        <Package className="w-4 h-4" />
+                        {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
                   </div>
 
-                  {/* Aviso de segurança: a portaria não tem acesso ao código */}
-                  <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
-                    <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground">
-                      Por segurança, o código de retirada é sigiloso e não fica visível na portaria.
-                      Peça o código ao morador na entrega — a conferência é feita automaticamente pelo sistema.
-                    </p>
+                  {/* Aviso de segurança */}
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl border border-border/80 bg-muted/40 backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold mb-0.5">Código de retirada sigiloso</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Por segurança, o código não fica visível na portaria. Peça ao morador — a conferência é feita automaticamente pelo sistema ao confirmar a retirada.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
