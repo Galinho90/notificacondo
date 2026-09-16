@@ -319,6 +319,7 @@ export default function PorteiroPackages() {
         };
         return {
           success: false,
+          reason: result.reason,
           error: messages[result.reason ?? ""] ?? "Não foi possível confirmar a retirada.",
         };
       }
