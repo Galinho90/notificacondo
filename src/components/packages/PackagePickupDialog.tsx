@@ -29,6 +29,8 @@ import { Package } from "@/hooks/usePackages";
 export interface PickupConfirmResult {
   success: boolean;
   error?: string;
+  /** Motivo estrutural da falha (ex.: `invalid_code`) para feedback visual. */
+  reason?: string;
 }
 
 interface PackagePickupDialogProps {
@@ -64,6 +66,8 @@ export function PackagePickupDialog({
   const [pickedUpByName, setPickedUpByName] = useState("");
   const [codeValid, setCodeValid] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  /** Erro exibido inline no passo de validação (o formulário permanece na tela). */
+  const [inlineError, setInlineError] = useState("");
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +80,7 @@ export function PackagePickupDialog({
       setPickedUpByName("");
       setCodeValid(null);
       setErrorMessage("");
+      setInlineError("");
       setSignedPhotoUrl(null);
     }
   }, [open]);
@@ -115,25 +120,36 @@ export function PackagePickupDialog({
     }
   }, [step]);
 
-  // Em validação por servidor basta o código estar completo (6 dígitos).
-  const canSubmit = serverValidation
-    ? inputCode.length === 6 && pickedUpByName.trim().length > 0
-    : codeValid === true && pickedUpByName.trim().length > 0;
-
   const handleConfirm = async () => {
-    if (!canSubmit) return;
+    if (step === "processing") return;
 
+    // Validação de preenchimento: mantém o botão sempre visível/clicável e
+    // comunica o problema inline, sem trocar de passo.
+    if (pickedUpByName.trim().length === 0) {
+      setInlineError("Informe o nome de quem está retirando.");
+      return;
+    }
+    if (inputCode.length !== 6) {
+      setCodeValid(false);
+      setInlineError("Digite o código completo de 6 dígitos.");
+      return;
+    }
+
+    setInlineError("");
     setStep("processing");
     const result = await onConfirm(pickedUpByName.trim(), inputCode.trim());
 
     if (result.success) {
+      setCodeValid(true);
       setStep("success");
       setTimeout(() => {
         onOpenChange(false);
       }, 2000);
     } else {
-      setErrorMessage(result.error || "Erro ao confirmar retirada");
-      setStep("error");
+      // Falha: permanece no formulário. Código errado pinta o campo de vermelho.
+      setCodeValid(result.reason === "invalid_code" ? false : null);
+      setInlineError(result.error || "Erro ao confirmar retirada");
+      setStep("validate");
     }
   };
 
@@ -280,7 +296,7 @@ export function PackagePickupDialog({
                     pattern="[0-9]*"
                     autoComplete="off"
                   />
-                  {!serverValidation && codeValid !== null && (
+                  {codeValid !== null && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {codeValid ? (
                         <Check className="w-5 h-5 text-green-500" />
@@ -290,7 +306,12 @@ export function PackagePickupDialog({
                     </div>
                   )}
                 </div>
-                {serverValidation ? (
+                {inlineError ? (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {inlineError}
+                  </p>
+                ) : serverValidation ? (
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     O código é conferido com segurança no servidor.
@@ -306,7 +327,7 @@ export function PackagePickupDialog({
                 )}
               </div>
 
-              {/* Actions */}
+              {/* Actions — o botão Confirmar permanece sempre visível */}
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -316,7 +337,7 @@ export function PackagePickupDialog({
                   <ArrowLeft className="w-4 h-4" />
                   Voltar
                 </Button>
-                <Button onClick={handleConfirm} disabled={!canSubmit} className="flex-1 gap-2">
+                <Button onClick={handleConfirm} className="flex-1 gap-2">
                   <PackageCheck className="w-4 h-4" />
                   Confirmar
                 </Button>
