@@ -101,17 +101,13 @@ export function PackagePickupDialog({
 
   // Validate code as user types (apenas quando a conferência é local)
   useEffect(() => {
-    if (serverValidation) {
-      setCodeValid(null);
-      return;
-    }
     if (!package_ || !inputCode) {
       setCodeValid(null);
       return;
     }
     const isValid = inputCode.toUpperCase() === (package_.pickup_code || "").toUpperCase();
     setCodeValid(isValid);
-  }, [inputCode, package_, serverValidation]);
+  }, [inputCode, package_]);
 
   // Focus input when entering validate step
   useEffect(() => {
@@ -288,8 +284,8 @@ export function PackagePickupDialog({
                     }}
                     className={cn(
                       "font-mono text-2xl tracking-[0.5em] text-center pr-10",
-                      codeValid === true && "border-green-500 focus-visible:ring-green-500",
-                      codeValid === false && "border-destructive focus-visible:ring-destructive"
+                      codeValid === true && "border-green-500 focus-visible:ring-green-500 bg-green-50 dark:bg-green-950/30",
+                      codeValid === false && "border-destructive focus-visible:ring-destructive bg-destructive/5"
                     )}
                     maxLength={6}
                     inputMode="numeric"
@@ -306,28 +302,15 @@ export function PackagePickupDialog({
                     </div>
                   )}
                 </div>
-                {inlineError ? (
+                {codeValid === false && inputCode.length >= 6 && (
                   <p className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {inlineError}
+                    Código inválido — verifique e tente novamente
                   </p>
-                ) : serverValidation ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    O código é conferido com segurança no servidor.
-                  </p>
-                ) : (
-                  codeValid === false &&
-                  inputCode.length >= 4 && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" />
-                      Código inválido
-                    </p>
-                  )
                 )}
               </div>
 
-              {/* Actions — o botão Confirmar permanece sempre visível */}
+              {/* Actions — o botão Confirmar só aparece quando o código está correto */}
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -337,9 +320,16 @@ export function PackagePickupDialog({
                   <ArrowLeft className="w-4 h-4" />
                   Voltar
                 </Button>
-                <Button onClick={handleConfirm} className="flex-1 gap-2">
+                <Button
+                  onClick={handleConfirm}
+                  className={cn(
+                    "flex-1 gap-2 transition-all",
+                    codeValid !== true && "opacity-50 cursor-not-allowed pointer-events-none"
+                  )}
+                  disabled={codeValid !== true}
+                >
                   <PackageCheck className="w-4 h-4" />
-                  Confirmar
+                  {codeValid === true ? "Confirmar" : "Aguardando código..."}
                 </Button>
               </div>
             </div>
