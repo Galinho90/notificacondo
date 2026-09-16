@@ -100,11 +100,17 @@ export function PackagePickupDialog({
   }, [open, package_?.photo_url]);
 
   // Validate code as user types.
-  // Quando serverValidation=true (ex.: porteiro), o código nunca está disponível
-  // no frontend — a validação acontece no servidor, então sempre ignoramos aqui.
+  // Quando serverValidation=true (ex.: porteiro), o código real nunca está no
+  // frontend — a validação de FORMATO (6 dígitos) é local para habilitar o botão;
+  // a conferência de VERACIDADE é feita no servidor (handleConfirm).
   useEffect(() => {
-    if (!package_ || !inputCode || serverValidation) {
+    if (!package_ || !inputCode) {
       setCodeValid(null);
+      return;
+    }
+    if (serverValidation) {
+      // Só valida o formato (6 dígitos) — o servidor valida o valor real.
+      setCodeValid(inputCode.length === 6 ? true : null);
       return;
     }
     const storedCode = (package_.pickup_code || "").toUpperCase().trim();
