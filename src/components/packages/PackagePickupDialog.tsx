@@ -99,9 +99,11 @@ export function PackagePickupDialog({
     }
   }, [open, package_?.photo_url]);
 
-  // Validate code as user types (apenas quando a conferência é local)
+  // Validate code as user types.
+  // Quando serverValidation=true (ex.: porteiro), o código nunca está disponível
+  // no frontend — a validação acontece no servidor, então sempre ignoramos aqui.
   useEffect(() => {
-    if (!package_ || !inputCode) {
+    if (!package_ || !inputCode || serverValidation) {
       setCodeValid(null);
       return;
     }
@@ -109,7 +111,7 @@ export function PackagePickupDialog({
     const entered = inputCode.toUpperCase().trim();
     const isValid = entered.length === 6 && entered === storedCode;
     setCodeValid(isValid);
-  }, [inputCode, package_]);
+  }, [inputCode, package_, serverValidation]);
 
   // Focus input when entering validate step
   useEffect(() => {
