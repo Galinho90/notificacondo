@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Package } from "@/hooks/usePackages";
+import { supabase } from "@/integrations/supabase/client";
 
 /** Resultado da confirmação de retirada. */
 export interface PickupConfirmResult {
@@ -70,6 +71,7 @@ export function PackagePickupDialog({
   const [inlineError, setInlineError] = useState("");
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset state when dialog opens
@@ -82,6 +84,7 @@ export function PackagePickupDialog({
       setErrorMessage("");
       setInlineError("");
       setSignedPhotoUrl(null);
+      setIsValidating(false);
     }
   }, [open]);
 
@@ -99,25 +102,36 @@ export function PackagePickupDialog({
     }
   }, [open, package_?.photo_url]);
 
-  // Validate code as user types.
-  // Quando serverValidation=true (ex.: porteiro), o código real nunca está no
-  // frontend — a validação de FORMATO (6 dígitos) é local para habilitar o botão;
-  // a conferência de VERACIDADE é feita no servidor (handleConfirm).
+  // Validação em tempo real: compara com o banco via RPC a cada keystroke.
+  // O código real nunca sai do servidor — o frontend só recebe true/false.
   useEffect(() => {
-    if (!package_ || !inputCode) {
+    if (!package_ || !inputCode || inputCode.length < 6) {
       setCodeValid(null);
       return;
     }
+
     if (serverValidation) {
-      // Só valida o formato (6 dígitos) — o servidor valida o valor real.
-      setCodeValid(inputCode.length === 6 ? true : null);
-      return;
+      setIsValidating(true);
+      supabase
+        .rpc("confirm_package_pickup_secure", {
+          p_package_id: package_.id,
+          p_code: inputCode.trim(),
+          p_picked_up_by: null,
+          p_picked_up_by_name: "",
+        })
+        .then(({ data, error }) => {
+          // Se a RPC retorna success=true, o código está correto.
+          // Qualquer outro cenário (não encontrado, erro, etc.) = inválido.
+          if (error) {
+            setCodeValid(false);
+            return;
+          }
+          setCodeValid(data?.success === true);
+        })
+        .catch(() => setCodeValid(false))
+        .finally(() => setIsValidating(false));
     }
-    const storedCode = (package_.pickup_code || "").toUpperCase().trim();
-    const entered = inputCode.toUpperCase().trim();
-    const isValid = entered.length === 6 && entered === storedCode;
-    setCodeValid(isValid);
-  }, [inputCode, package_, serverValidation]);
+  }, [inputCode, package_?.id, serverValidation]);
 
   // Focus input when entering validate step
   useEffect(() => {
@@ -129,8 +143,7 @@ export function PackagePickupDialog({
   const handleConfirm = async () => {
     if (step === "processing") return;
 
-    // Validação de preenchimento: mantém o botão sempre visível/clicável e
-    // comunica o problema inline, sem trocar de passo.
+    // Validação de preenchimento: mantém o formulário visível e comunica inline.
     if (pickedUpByName.trim().length === 0) {
       setInlineError("Informe o nome de quem está retirando.");
       return;
@@ -152,7 +165,7 @@ export function PackagePickupDialog({
         onOpenChange(false);
       }, 2000);
     } else {
-      // Falha: permanece no formulário. Código errado pinta o campo de vermelho.
+      // Falha: permanece no formulário.
       setCodeValid(result.reason === "invalid_code" ? false : null);
       setInlineError(result.error || "Erro ao confirmar retirada");
       setStep("validate");
@@ -160,7 +173,7 @@ export function PackagePickupDialog({
   };
 
   const handleClose = () => {
-    if (step === "processing") return; // Prevent closing while processing
+    if (step === "processing") return;
     onOpenChange(false);
   };
 
@@ -276,7 +289,7 @@ export function PackagePickupDialog({
                 />
               </div>
 
-              {/* Code Input */}
+              {/* Código de Retirada — validado em tempo real com o banco */}
               <div className="space-y-2">
                 <Label htmlFor="pickup-code" className="flex items-center gap-2">
                   <KeyRound className="w-4 h-4" />
@@ -302,7 +315,13 @@ export function PackagePickupDialog({
                     pattern="[0-9]*"
                     autoComplete="off"
                   />
-                  {codeValid !== null && (
+                  {/* Ícone de status: carregando / válido / inválido */}
+                  {isValidating && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {!isValidating && codeValid !== null && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {codeValid ? (
                         <Check className="w-5 h-5 text-green-500" />
@@ -312,15 +331,36 @@ export function PackagePickupDialog({
                     </div>
                   )}
                 </div>
-                {codeValid === false && inputCode.length >= 6 && (
+
+                {/* Feedback visual em tempo real */}
+                {inputCode.length >= 6 && codeValid === false && !isValidating && (
                   <p className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    Código inválido — verifique e tente novamente
+                    Código incorreto — verifique e tente novamente
+                  </p>
+                )}
+                {inputCode.length >= 6 && codeValid === true && !isValidating && (
+                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <Check className="w-4 h-4" />
+                    Código correto!
+                  </p>
+                )}
+                {inputCode.length > 0 && inputCode.length < 6 && (
+                  <p className="text-sm text-muted-foreground">
+                    Digite os 6 dígitos do código
                   </p>
                 )}
               </div>
 
-              {/* Actions — o botão Confirmar só aparece quando o código está correto */}
+              {/* Erro inline */}
+              {inlineError && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {inlineError}
+                </p>
+              )}
+
+              {/* Ações — botão Confirmar habilitado apenas quando o código foi validado */}
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
