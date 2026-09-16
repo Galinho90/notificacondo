@@ -506,25 +506,36 @@ export default function PorteiroPackages() {
 
               {/* Informações do apartamento selecionado */}
               {selectedApartment && (
-                <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                    <Building2 className="w-6 h-6 text-primary" />
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg sm:flex-row sm:items-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                      <Building2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-base">
+                        {selectedApartment.blockName} - {selectedApartment.number}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedApartment.condominiumName}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={pendingCount > 0 ? "default" : "secondary"}
+                      className="gap-1.5 text-sm px-3 py-1.5 self-start sm:self-auto"
+                    >
+                      <Package className="w-4 h-4" />
+                      {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
+                    </Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-base">
-                      {selectedApartment.blockName} - {selectedApartment.number}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedApartment.condominiumName}
+
+                  {/* Aviso de segurança: a portaria não tem acesso ao código */}
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
+                    <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Por segurança, o código de retirada é sigiloso e não fica visível na portaria.
+                      Peça o código ao morador na entrega — a conferência é feita automaticamente pelo sistema.
                     </p>
                   </div>
-                  <Badge 
-                    variant={pendingCount > 0 ? "default" : "secondary"} 
-                    className="gap-1.5 text-sm px-3 py-1.5"
-                  >
-                    <Package className="w-4 h-4" />
-                    {pendingCount} pendente{pendingCount !== 1 ? "s" : ""}
-                  </Badge>
                 </div>
               )}
             </CardContent>
