@@ -296,7 +296,7 @@ export function PackagePickupDialog({
                     pattern="[0-9]*"
                     autoComplete="off"
                   />
-                  {!serverValidation && codeValid !== null && (
+                  {codeValid !== null && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {codeValid ? (
                         <Check className="w-5 h-5 text-green-500" />
@@ -306,7 +306,12 @@ export function PackagePickupDialog({
                     </div>
                   )}
                 </div>
-                {serverValidation ? (
+                {inlineError ? (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {inlineError}
+                  </p>
+                ) : serverValidation ? (
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     O código é conferido com segurança no servidor.
@@ -322,7 +327,7 @@ export function PackagePickupDialog({
                 )}
               </div>
 
-              {/* Actions */}
+              {/* Actions — o botão Confirmar permanece sempre visível */}
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -332,7 +337,7 @@ export function PackagePickupDialog({
                   <ArrowLeft className="w-4 h-4" />
                   Voltar
                 </Button>
-                <Button onClick={handleConfirm} disabled={!canSubmit} className="flex-1 gap-2">
+                <Button onClick={handleConfirm} className="flex-1 gap-2">
                   <PackageCheck className="w-4 h-4" />
                   Confirmar
                 </Button>
