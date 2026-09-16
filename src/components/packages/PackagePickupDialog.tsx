@@ -66,6 +66,8 @@ export function PackagePickupDialog({
   const [pickedUpByName, setPickedUpByName] = useState("");
   const [codeValid, setCodeValid] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  /** Erro exibido inline no passo de validação (o formulário permanece na tela). */
+  const [inlineError, setInlineError] = useState("");
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
