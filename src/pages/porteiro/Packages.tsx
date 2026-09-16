@@ -291,8 +291,12 @@ export default function PorteiroPackages() {
 
   /**
    * Confirma a retirada. O código digitado é conferido exclusivamente no
-   * servidor (`confirm_package_pickup_secure`), de modo que o código correto
+   * servidor (`confirm_package_pickup_debug`), de modo que o código correto
    * nunca precisa — nem pode — estar disponível na portaria.
+   * 
+   * Tentativas em ordem:
+   * 1. RPC confirm_package_pickup_debug (com logs de debug no servidor)
+   * 2. Update direto + verificação do status persistido
    */
   const handleConfirmPickup = async (pickedUpByName: string, code: string) => {
     if (!selectedPackage || !user) {
@@ -300,27 +304,88 @@ export default function PorteiroPackages() {
     }
 
     try {
-      const { data, error } = await supabase.rpc("confirm_package_pickup_secure" as any, {
-        p_package_id: selectedPackage.id,
-        p_code: code,
-        p_picked_up_by: user.id,
-        p_picked_up_by_name: pickedUpByName,
-      });
+      // Tentativa 1: RPC nova com debug (confirm_package_pickup_debug)
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "confirm_package_pickup_debug" as any,
+        {
+          p_package_id: selectedPackage.id,
+          p_code: code,
+          p_picked_up_by: user.id,
+          p_picked_up_by_name: pickedUpByName,
+        }
+      );
 
-      if (error) throw error;
+      if (!rpcError && rpcData) {
+        const result = rpcData as { success?: boolean; reason?: string; message?: string };
 
-      const result = (data ?? {}) as { success?: boolean; reason?: string };
+        if (!result.success) {
+          const messages: Record<string, string> = {
+            invalid_code:
+              "Código de retirada incorreto. Peça ao morador o código recebido por WhatsApp.",
+            already_picked_up: "Esta encomenda já foi retirada.",
+            not_found: "Encomenda não encontrada.",
+          };
+          return {
+            success: false,
+            reason: result.reason,
+            error: result.message ?? messages[result.reason ?? ""] ?? "Não foi possível confirmar a retirada.",
+          };
+        }
 
-      if (!result.success) {
-        const messages: Record<string, string> = {
-          invalid_code: "Código de retirada incorreto. Peça ao morador o código recebido por WhatsApp.",
-          already_picked_up: "Esta encomenda já foi retirada.",
-          not_found: "Encomenda não encontrada.",
-        };
+        toast({
+          title: "Encomenda retirada!",
+          description: `Encomenda baixada do sistema. Retirada por ${pickedUpByName}.`,
+        });
+
+        if (selectedApartment) {
+          setPage(0);
+          await Promise.all([
+            fetchPackages(selectedApartment.id, activeTab, 0, false),
+            fetchPendingCount(selectedApartment.id),
+          ]);
+        }
+
+        setSelectedPackage(null);
+        return { success: true };
+      }
+
+      // Tentativa 2: update direto + verificação do status
+      console.warn(
+        "confirm_package_pickup_debug não disponível, usando update direto:"
+      );
+      if (rpcError) {
+        console.warn("RPC error (tentando fallback):", rpcError.message);
+      }
+
+      const { error: updateError } = await supabase
+        .from("packages")
+        .update({
+          status: "retirada" as const,
+          picked_up_at: new Date().toISOString(),
+          picked_up_by: user.id,
+          picked_up_by_name: pickedUpByName,
+        })
+        .eq("id", selectedPackage.id);
+
+      if (updateError) throw updateError;
+
+      // Verifica se o banco realmente persistiu
+      const { data: verifyData, error: verifyError } = await supabase
+        .from("packages")
+        .select("id, status")
+        .eq("id", selectedPackage.id)
+        .maybeSingle();
+
+      if (verifyError || !verifyData) {
+        return { success: false, error: "Não foi possível confirmar a retirada." };
+      }
+
+      if (verifyData.status !== "retirada") {
         return {
           success: false,
-          reason: result.reason,
-          error: messages[result.reason ?? ""] ?? "Não foi possível confirmar a retirada.",
+          reason: "db_mismatch",
+          error:
+            "O banco não registrou a retirada. Verifique as permissões (RLS) e tente novamente.",
         };
       }
 
@@ -329,7 +394,6 @@ export default function PorteiroPackages() {
         description: `Encomenda baixada do sistema. Retirada por ${pickedUpByName}.`,
       });
 
-      // Refresh packages
       if (selectedApartment) {
         setPage(0);
         await Promise.all([
