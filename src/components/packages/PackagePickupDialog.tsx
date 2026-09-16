@@ -110,6 +110,35 @@ export function PackagePickupDialog({
     }
   }, [step]);
 
+  // Automatic server validation as user types the code
+  useEffect(() => {
+    if (step !== "validate") return;
+    if (inputCode.length !== 6) return;
+    if (!serverValidation || !package_) {
+      // No server validation: just check length
+      setCodeValid(null);
+      return;
+    }
+
+    // Debounce: wait for user to stop typing
+    const timer = setTimeout(async () => {
+      setIsValidating(true);
+      try {
+        const { data, error } = await supabase.rpc("confirm_package_pickup_secure", {
+          p_package_id: package_.id,
+          p_code: inputCode.trim(),
+          p_picked_up_by: null,
+          p_picked_up_by_name: "",
+        });
+        if (error) { setCodeValid(false); return; }
+        setCodeValid(data?.success === true);
+      } catch { setCodeValid(false); }
+      finally { setIsValidating(false); }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [inputCode, step, serverValidation, package_]);
+
   /**
    * Valida o código no servidor (RPC) e colore o campo conforme o resultado.
    * A baixa efetiva só acontece quando o porteiro clica em "Confirmar".
