@@ -124,11 +124,9 @@ export function PackagePickupDialog({
     const timer = setTimeout(async () => {
       setIsValidating(true);
       try {
-        const { data, error } = await supabase.rpc("confirm_package_pickup_secure", {
+        const { data, error } = await supabase.rpc("validate_pickup_code", {
           p_package_id: package_.id,
           p_code: inputCode.trim(),
-          p_picked_up_by: null,
-          p_picked_up_by_name: "",
         });
         if (error) { setCodeValid(false); return; }
         setCodeValid(data?.success === true);
@@ -148,11 +146,9 @@ export function PackagePickupDialog({
 
     setIsValidating(true);
     try {
-      const { data, error } = await supabase.rpc("confirm_package_pickup_secure", {
+      const { data, error } = await supabase.rpc("validate_pickup_code", {
         p_package_id: package_.id,
         p_code: code.trim(),
-        p_picked_up_by: null,
-        p_picked_up_by_name: "",
       });
 
       if (error) {
