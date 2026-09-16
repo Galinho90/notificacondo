@@ -29,6 +29,8 @@ import { Package } from "@/hooks/usePackages";
 export interface PickupConfirmResult {
   success: boolean;
   error?: string;
+  /** Motivo estrutural da falha (ex.: `invalid_code`) para feedback visual. */
+  reason?: string;
 }
 
 interface PackagePickupDialogProps {
