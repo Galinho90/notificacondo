@@ -120,25 +120,36 @@ export function PackagePickupDialog({
     }
   }, [step]);
 
-  // Em validação por servidor basta o código estar completo (6 dígitos).
-  const canSubmit = serverValidation
-    ? inputCode.length === 6 && pickedUpByName.trim().length > 0
-    : codeValid === true && pickedUpByName.trim().length > 0;
-
   const handleConfirm = async () => {
-    if (!canSubmit) return;
+    if (step === "processing") return;
 
+    // Validação de preenchimento: mantém o botão sempre visível/clicável e
+    // comunica o problema inline, sem trocar de passo.
+    if (pickedUpByName.trim().length === 0) {
+      setInlineError("Informe o nome de quem está retirando.");
+      return;
+    }
+    if (inputCode.length !== 6) {
+      setCodeValid(false);
+      setInlineError("Digite o código completo de 6 dígitos.");
+      return;
+    }
+
+    setInlineError("");
     setStep("processing");
     const result = await onConfirm(pickedUpByName.trim(), inputCode.trim());
 
     if (result.success) {
+      setCodeValid(true);
       setStep("success");
       setTimeout(() => {
         onOpenChange(false);
       }, 2000);
     } else {
-      setErrorMessage(result.error || "Erro ao confirmar retirada");
-      setStep("error");
+      // Falha: permanece no formulário. Código errado pinta o campo de vermelho.
+      setCodeValid(result.reason === "invalid_code" ? false : null);
+      setInlineError(result.error || "Erro ao confirmar retirada");
+      setStep("validate");
     }
   };
 
