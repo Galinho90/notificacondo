@@ -745,12 +745,14 @@ export default function PorteiroPackages() {
           )}
         </div>
 
-        {/* Pickup Dialog */}
+        {/* Pickup Dialog — código nunca exibido e conferido no servidor */}
         <PackagePickupDialog
           open={isPickupDialogOpen}
           onOpenChange={setIsPickupDialogOpen}
           package_={selectedPackage}
           onConfirm={handleConfirmPickup}
+          revealPickupCode={false}
+          serverValidation
         />
 
         {/* Details Dialog */}
