@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell, HelpCircle, ArrowRight, PackageOpen } from "lucide-react";
+import { Package, PackagePlus, Search, PackageCheck, X, Building2, Loader2, CheckCircle2, Bell, HelpCircle, ArrowRight, PackageOpen, ShieldCheck } from "lucide-react";
 import SubscriptionGate from "@/components/sindico/SubscriptionGate";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
